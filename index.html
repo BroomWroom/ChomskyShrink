@@ -1,0 +1,1333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Automata Converter & Minimizer</title>
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  
+  <!-- Cytoscape.js CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.28.1/cytoscape.min.js"></script>
+  
+  <style>
+    :root {
+      /* Palette: #F4EEFF, #DCD6F7, #A6B1E1, #424874 */
+      --color-bg: #F4EEFF;
+      --color-card: #FFFFFF;
+      --color-subtle: #DCD6F7;
+      --color-border: #DCD6F7;
+      --color-accent: #A6B1E1;
+      --color-primary: #424874;
+      --color-text: #424874;
+      
+      --font-sans: 'Inter', system-ui, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--color-bg);
+      color: var(--color-text);
+      font-family: var(--font-sans);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* Header */
+    header {
+      height: 48px;
+      background: var(--color-card);
+      border-bottom: 1px solid var(--color-border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 1.25rem;
+      z-index: 10;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: var(--color-primary);
+      letter-spacing: -0.01em;
+    }
+
+    .brand-icon {
+      width: 22px;
+      height: 22px;
+      background: var(--color-primary);
+      color: #FFFFFF;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .btn {
+      background: var(--color-card);
+      color: var(--color-primary);
+      border: 1px solid var(--color-border);
+      padding: 0.35rem 0.7rem;
+      border-radius: 4px;
+      font-size: 0.775rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      transition: background 0.15s ease, border-color 0.15s ease;
+    }
+
+    .btn:hover {
+      background: var(--color-subtle);
+      border-color: var(--color-accent);
+    }
+
+    .btn-primary {
+      background: var(--color-primary);
+      color: #FFFFFF;
+      border-color: var(--color-primary);
+    }
+
+    .btn-primary:hover {
+      background: #33385b;
+    }
+
+    .btn-accent {
+      background: var(--color-accent);
+      color: var(--color-primary);
+      border-color: var(--color-accent);
+    }
+
+    .btn-accent:hover {
+      background: #93a0d7;
+    }
+
+    .btn-sm {
+      padding: 0.2rem 0.45rem;
+      font-size: 0.725rem;
+    }
+
+    .select-input {
+      background: var(--color-card);
+      color: var(--color-primary);
+      border: 1px solid var(--color-border);
+      padding: 0.35rem 0.6rem;
+      border-radius: 4px;
+      font-size: 0.775rem;
+      font-weight: 500;
+      outline: none;
+      cursor: pointer;
+    }
+
+    /* Workspace */
+    .workspace {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+    }
+
+    /* Left Control Panel */
+    .left-panel {
+      width: 420px;
+      background: var(--color-card);
+      border-right: 1px solid var(--color-border);
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      padding: 1rem;
+      gap: 1rem;
+    }
+
+    .card {
+      background: var(--color-bg);
+      border: 1px solid var(--color-border);
+      border-radius: 8px;
+      padding: 0.85rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.65rem;
+    }
+
+    .card-title {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--color-primary);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    /* Minimal Tabs */
+    .nav-tabs {
+      display: flex;
+      gap: 0.25rem;
+      background: var(--color-card);
+      padding: 0.2rem;
+      border-radius: 6px;
+      border: 1px solid var(--color-border);
+    }
+
+    .nav-tab {
+      flex: 1;
+      background: none;
+      border: none;
+      color: var(--color-primary);
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 0.35rem;
+      border-radius: 4px;
+      cursor: pointer;
+      text-align: center;
+    }
+
+    .nav-tab.active {
+      background: var(--color-accent);
+      color: var(--color-primary);
+    }
+
+    /* Inputs */
+    .form-row {
+      display: flex;
+      gap: 0.4rem;
+    }
+
+    input[type="text"], textarea {
+      background: var(--color-card);
+      color: var(--color-primary);
+      border: 1px solid var(--color-border);
+      border-radius: 6px;
+      padding: 0.5rem 0.7rem;
+      font-size: 0.825rem;
+      font-family: var(--font-mono);
+      outline: none;
+      width: 100%;
+    }
+
+    input[type="text"]:focus, textarea:focus {
+      border-color: var(--color-primary);
+    }
+
+    /* Formal Def & Table */
+    .formal-def {
+      font-family: var(--font-mono);
+      font-size: 0.825rem;
+      color: var(--color-primary);
+      line-height: 1.6;
+      background: var(--color-card);
+      border: 1px solid var(--color-border);
+      border-radius: 6px;
+      padding: 0.75rem 0.85rem;
+    }
+
+    .table-wrapper {
+      overflow-x: auto;
+      border: 1px solid var(--color-border);
+      border-radius: 6px;
+      background: var(--color-card);
+    }
+
+    table.matrix {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.825rem;
+      font-family: var(--font-mono);
+    }
+
+    table.matrix th {
+      background: var(--color-subtle);
+      color: var(--color-primary);
+      font-weight: 700;
+      padding: 0.6rem 0.75rem;
+      border: 1px solid var(--color-border);
+      text-align: center;
+    }
+
+    table.matrix td {
+      border: 1px solid var(--color-border);
+      padding: 0.4rem 0.5rem;
+      text-align: center;
+      vertical-align: middle;
+      height: 38px;
+    }
+
+    table.matrix tr.row-start {
+      background: rgba(166, 177, 225, 0.15);
+    }
+
+    table.matrix tr.row-accept {
+      background: rgba(220, 214, 247, 0.25);
+    }
+
+    table.matrix td.state-cell {
+      font-weight: 700;
+      color: var(--color-primary);
+      white-space: nowrap;
+      padding: 0.4rem 0.6rem;
+      background: rgba(220, 214, 247, 0.2);
+    }
+
+    table.matrix td input {
+      background: transparent;
+      border: none;
+      color: var(--color-primary);
+      text-align: center;
+      width: 100%;
+      height: 100%;
+      font-family: var(--font-mono);
+      font-size: 0.825rem;
+      font-weight: 500;
+      outline: none;
+      padding: 0.2rem;
+    }
+
+    table.matrix td input:focus {
+      background: var(--color-bg);
+      border-radius: 4px;
+    }
+
+    /* Mapping List */
+    .mapping-list {
+      font-family: var(--font-mono);
+      font-size: 0.775rem;
+      color: var(--color-primary);
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      max-height: 160px;
+      overflow-y: auto;
+      padding-right: 0.2rem;
+    }
+
+    .mapping-item {
+      background: var(--color-card);
+      border: 1px solid var(--color-border);
+      padding: 0.5rem 0.7rem;
+      border-radius: 6px;
+      line-height: 1.4;
+      word-break: break-all;
+    }
+
+    .mapping-item strong {
+      color: var(--color-primary);
+      font-size: 0.825rem;
+      margin-right: 0.3rem;
+    }
+
+    /* Right Panel (Graph Canvas) */
+    .right-panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      background: var(--color-bg);
+    }
+
+    .canvas-bar {
+      height: 44px;
+      background: var(--color-card);
+      border-bottom: 1px solid var(--color-border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 1rem;
+    }
+
+    .legend-group {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--color-primary);
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+
+    .dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      border: 2px solid var(--color-primary);
+    }
+    .dot-start { background: var(--color-primary); }
+    .dot-accept { background: var(--color-subtle); border-style: double; border-width: 3.5px; }
+    .dot-both { background: var(--color-accent); border-style: double; border-width: 3.5px; }
+
+    #cy {
+      flex: 1;
+      width: 100%;
+      height: 100%;
+    }
+
+    .canvas-hint {
+      position: absolute;
+      bottom: 0.85rem;
+      left: 0.85rem;
+      background: var(--color-card);
+      border: 1px solid var(--color-border);
+      padding: 0.4rem 0.75rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      color: var(--color-primary);
+      z-index: 5;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header>
+    <div class="brand">
+      <div class="brand-icon">FA</div>
+      <span>Automata Converter & Minimizer</span>
+    </div>
+
+    <div class="header-actions">
+      <select id="presetSelect" class="select-input">
+        <option value="" disabled selected>Sample Data...</option>
+        <option value="regex_sample">Sample Regex: (a|b)*abb</option>
+        <option value="nfa_sample">Sample NFA (NFA → DFA)</option>
+        <option value="dfa_minimization">Sample Non-minimal DFA</option>
+      </select>
+
+      <div style="height: 16px; width: 1px; background: var(--color-border);"></div>
+
+      <button id="btnConvertNfaDfa" class="btn btn-accent">Convert NFA → DFA</button>
+      <button id="btnMinimizeDfa" class="btn btn-primary">Minimize DFA</button>
+      <button id="btnClear" class="btn btn-sm">Clear</button>
+    </div>
+  </header>
+
+  <!-- Workspace -->
+  <div class="workspace">
+
+    <!-- Left Controls Panel -->
+    <div class="left-panel">
+      
+      <!-- Input Mode -->
+      <div class="card">
+        <div class="card-title">Automaton Input</div>
+        <div class="nav-tabs">
+          <button class="nav-tab active" data-tab="tab-quick">Controls</button>
+          <button class="nav-tab" data-tab="tab-regex">Regex Mode</button>
+          <button class="nav-tab" data-tab="tab-text">Simple Text</button>
+        </div>
+
+        <div id="tab-quick" class="tab-pane" style="display: flex; flex-direction: column; gap: 0.4rem;">
+          <div class="form-row">
+            <input type="text" id="newStateInput" placeholder="State (e.g. q0)">
+            <button id="btnAddState" class="btn" style="white-space: nowrap;">+ State</button>
+          </div>
+          <div class="form-row">
+            <input type="text" id="newSymbolInput" placeholder="Symbol (e.g. a)">
+            <button id="btnAddSymbol" class="btn" style="white-space: nowrap;">+ Symbol</button>
+          </div>
+        </div>
+
+        <div id="tab-regex" class="tab-pane" style="display: none; flex-direction: column; gap: 0.4rem;">
+          <input type="text" id="regexInput" placeholder="e.g. (a|b)*abb">
+          <button id="btnBuildRegex" class="btn btn-primary btn-sm">Build NFA from Regex</button>
+        </div>
+
+        <div id="tab-text" class="tab-pane" style="display: none; flex-direction: column; gap: 0.4rem;">
+          <textarea id="simpleTextArea" rows="4" placeholder="->q0&#10;q0 --a--> q1&#10;q1*"></textarea>
+          <button id="btnApplyText" class="btn btn-primary btn-sm">Apply Text</button>
+        </div>
+      </div>
+
+      <!-- Formal Definition -->
+      <div class="card">
+        <div class="card-title">Formal Definition</div>
+        <div id="formalDefBox" class="formal-def">
+          Q = {q0}<br>
+          Σ = {a, b}<br>
+          q₀ = q0<br>
+          F = {}
+        </div>
+      </div>
+
+      <!-- Transition Table -->
+      <div class="card">
+        <div class="card-title">
+          <span>Transition Table (δ)</span>
+          <span id="typeBadge" style="font-size: 0.725rem; font-weight: 700; background: var(--color-subtle); padding: 0.15rem 0.45rem; border-radius: 4px;">NFA</span>
+        </div>
+        <div class="table-wrapper">
+          <table id="matrixTable" class="matrix">
+            <!-- Dynamically populated -->
+          </table>
+        </div>
+      </div>
+
+      <!-- State Mapping Log -->
+      <div class="card">
+        <div class="card-title">DFA State Mapping</div>
+        <div id="mappingList" class="mapping-list">
+          <div class="mapping-item">Standard automaton representation.</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Right Graph Panel -->
+    <div class="right-panel">
+      
+      <!-- Canvas Bar & Layout Controls -->
+      <div class="canvas-bar">
+        <div class="legend-group">
+          <span>Legend:</span>
+          <div class="legend-item"><div class="dot dot-start"></div><span>Start State</span></div>
+          <div class="legend-item"><div class="dot dot-accept"></div><span>Final State</span></div>
+          <div class="legend-item"><div class="dot dot-both"></div><span>Start & Final</span></div>
+        </div>
+
+        <div style="display: flex; gap: 0.35rem; align-items: center;">
+          <select id="layoutSelect" class="select-input" style="padding: 0.2rem 0.4rem; font-size: 0.725rem;">
+            <option value="horizontal">↔️ Horizontal Ranks (Textbook)</option>
+            <option value="cose">🌀 Force Layout (COSE)</option>
+            <option value="concentric">⭕ Concentric</option>
+          </select>
+
+          <button id="btnFit" class="btn btn-sm">Fit</button>
+          <button id="btnExportPng" class="btn btn-sm">PNG</button>
+        </div>
+      </div>
+
+      <!-- Cytoscape Container -->
+      <div id="cy"></div>
+
+      <!-- Instructions -->
+      <div class="canvas-hint">
+        💡 <strong>Tip:</strong> Clean horizontal left-to-right flow with incoming <code>→</code> start arrow.
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    /* ==========================================================================
+       AUTOMATON DATA ENGINE
+       ========================================================================== */
+    class Automaton {
+      constructor() {
+        this.states = ["q0", "q1"];
+        this.alphabet = ["a", "b"];
+        this.transitions = [
+          { from: "q0", symbol: "a", to: "q1" }
+        ];
+        this.startState = "q0";
+        this.acceptStates = ["q1"];
+        this.stateMappings = {};
+      }
+
+      isNFA() {
+        for (const t of this.transitions) {
+          if (t.symbol === 'ε' || t.symbol === 'e' || t.symbol === '') return true;
+        }
+        const seen = new Set();
+        for (const t of this.transitions) {
+          const key = `${t.from}__${t.symbol}`;
+          if (seen.has(key)) return true;
+          seen.add(key);
+        }
+        return false;
+      }
+
+      getEpsilonClosure(stateSet) {
+        const closure = new Set(stateSet);
+        const stack = [...stateSet];
+
+        while (stack.length > 0) {
+          const curr = stack.pop();
+          for (const t of this.transitions) {
+            if (t.from === curr && (t.symbol === 'ε' || t.symbol === 'e' || t.symbol === '')) {
+              if (!closure.has(t.to)) {
+                closure.add(t.to);
+                stack.push(t.to);
+              }
+            }
+          }
+        }
+        return Array.from(closure).sort();
+      }
+
+      toDFA() {
+        const dfa = new Automaton();
+        dfa.alphabet = this.alphabet.filter(s => s !== 'ε' && s !== 'e' && s !== '');
+        dfa.transitions = [];
+        dfa.states = [];
+        dfa.acceptStates = [];
+        dfa.stateMappings = {};
+
+        if (!this.startState || this.states.length === 0) return { dfa, logStr: "Empty automaton." };
+
+        const startClosure = this.getEpsilonClosure([this.startState]);
+        const stateKeyMap = new Map();
+
+        let stateIndex = 0;
+        function getNextShortName() { return `q${stateIndex++}`; }
+
+        function formatSetName(arr) {
+          return arr.length === 0 ? "∅" : "{" + arr.join(", ") + "}";
+        }
+
+        const startKey = startClosure.join(",");
+        const startName = getNextShortName();
+        const startFullSet = formatSetName(startClosure);
+
+        stateKeyMap.set(startKey, startName);
+        dfa.states.push(startName);
+        dfa.startState = startName;
+        dfa.stateMappings[startName] = startFullSet;
+
+        if (startClosure.some(s => this.acceptStates.includes(s))) {
+          dfa.acceptStates.push(startName);
+        }
+
+        const queue = [startClosure];
+        const visitedKeys = new Set([startKey]);
+
+        while (queue.length > 0) {
+          const currSet = queue.shift();
+          const currKey = currSet.join(",");
+          const currDfaName = stateKeyMap.get(currKey);
+
+          for (const sym of dfa.alphabet) {
+            const moveTarget = new Set();
+            for (const nfaState of currSet) {
+              for (const t of this.transitions) {
+                if (t.from === nfaState && t.symbol === sym) moveTarget.add(t.to);
+              }
+            }
+
+            const targetClosure = this.getEpsilonClosure(Array.from(moveTarget));
+            const targetKey = targetClosure.join(",");
+
+            if (targetClosure.length > 0) {
+              let targetDfaName = stateKeyMap.get(targetKey);
+              if (!targetDfaName) {
+                targetDfaName = getNextShortName();
+                const fullSet = formatSetName(targetClosure);
+
+                stateKeyMap.set(targetKey, targetDfaName);
+                dfa.states.push(targetDfaName);
+                dfa.stateMappings[targetDfaName] = fullSet;
+
+                if (targetClosure.some(s => this.acceptStates.includes(s))) {
+                  dfa.acceptStates.push(targetDfaName);
+                }
+              }
+              dfa.transitions.push({ from: currDfaName, symbol: sym, to: targetDfaName });
+
+              if (!visitedKeys.has(targetKey)) {
+                visitedKeys.add(targetKey);
+                queue.push(targetClosure);
+              }
+            }
+          }
+        }
+
+        return { dfa, logStr: `Converted to DFA.` };
+      }
+
+      minimizeDFA() {
+        const reachable = new Set();
+        if (this.startState) {
+          const q = [this.startState];
+          reachable.add(this.startState);
+          while (q.length > 0) {
+            const curr = q.shift();
+            for (const t of this.transitions) {
+              if (t.from === curr && !reachable.has(t.to)) {
+                reachable.add(t.to);
+                q.push(t.to);
+              }
+            }
+          }
+        }
+
+        const validStates = this.states.filter(s => reachable.has(s));
+        const validAccept = this.acceptStates.filter(s => reachable.has(s));
+        const validNonAccept = validStates.filter(s => !validAccept.includes(s));
+
+        let partitions = [];
+        if (validAccept.length > 0) partitions.push(validAccept);
+        if (validNonAccept.length > 0) partitions.push(validNonAccept);
+
+        let worklist = [...partitions];
+        const alphabet = this.alphabet.filter(s => s !== 'ε' && s !== 'e' && s !== '');
+
+        while (worklist.length > 0) {
+          const A = worklist.pop();
+          for (const c of alphabet) {
+            const X = validStates.filter(s => {
+              const targets = this.transitions.filter(t => t.from === s && t.symbol === c).map(t => t.to);
+              return targets.some(t => A.includes(t));
+            });
+
+            const newPartitions = [];
+            for (const Y of partitions) {
+              const intersect = Y.filter(s => X.includes(s));
+              const diff = Y.filter(s => !X.includes(s));
+
+              if (intersect.length > 0 && diff.length > 0) {
+                newPartitions.push(intersect);
+                newPartitions.push(diff);
+
+                const wIdx = worklist.findIndex(w => w.length === Y.length && w.every(e => Y.includes(e)));
+                if (wIdx !== -1) {
+                  worklist.splice(wIdx, 1);
+                  worklist.push(intersect);
+                  worklist.push(diff);
+                } else {
+                  worklist.push(intersect.length <= diff.length ? intersect : diff);
+                }
+              } else {
+                newPartitions.push(Y);
+              }
+            }
+            partitions = newPartitions;
+          }
+        }
+
+        const minDFA = new Automaton();
+        minDFA.alphabet = alphabet;
+        minDFA.transitions = [];
+        minDFA.states = [];
+        minDFA.acceptStates = [];
+        minDFA.stateMappings = {};
+
+        const map = new Map();
+        partitions.forEach((g, idx) => {
+          const name = `q${idx}`;
+          minDFA.states.push(name);
+          const mappedSets = g.map(s => this.stateMappings[s] || s);
+          minDFA.stateMappings[name] = `{ ${mappedSets.join(", ")} }`;
+
+          g.forEach(s => map.set(s, name));
+          if (g.some(s => validAccept.includes(s))) minDFA.acceptStates.push(name);
+          if (g.includes(this.startState)) minDFA.startState = name;
+        });
+
+        const added = new Set();
+        for (const t of this.transitions) {
+          if (reachable.has(t.from) && reachable.has(t.to)) {
+            const f = map.get(t.from), to = map.get(t.to);
+            const key = `${f}_${t.symbol}_${to}`;
+            if (!added.has(key)) {
+              added.add(key);
+              minDFA.transitions.push({ from: f, symbol: t.symbol, to });
+            }
+          }
+        }
+
+        return { minDFA, logStr: `Minimized DFA.` };
+      }
+    }
+
+    /* Thompson Regex Builder */
+    function parseRegexToNFA(regexStr) {
+      let formatted = "";
+      for (let i = 0; i < regexStr.length; i++) {
+        const c1 = regexStr[i];
+        formatted += c1;
+        if (i + 1 < regexStr.length) {
+          const c2 = regexStr[i + 1];
+          if ((c1 !== '(' && c1 !== '|') && (c2 !== ')' && c2 !== '|' && c2 !== '*' && c2 !== '+' && c2 !== '?')) {
+            formatted += '.';
+          }
+        }
+      }
+
+      const precedence = { '*': 3, '+': 3, '?': 3, '.': 2, '|': 1 };
+      const output = [], stack = [];
+
+      for (let i = 0; i < formatted.length; i++) {
+        const token = formatted[i];
+        if (token >= 'a' && token <= 'z' || token >= '0' && token <= '9') output.push(token);
+        else if (token === '(') stack.push(token);
+        else if (token === ')') {
+          while (stack.length > 0 && stack[stack.length - 1] !== '(') output.push(stack.pop());
+          stack.pop();
+        } else if (precedence[token]) {
+          while (stack.length > 0 && stack[stack.length - 1] !== '(' && precedence[stack[stack.length - 1]] >= precedence[token]) {
+            output.push(stack.pop());
+          }
+          stack.push(token);
+        }
+      }
+      while (stack.length > 0) output.push(stack.pop());
+
+      let counter = 0;
+      function newState() { return `q${counter++}`; }
+      const fragStack = [];
+
+      for (const token of output) {
+        if (token >= 'a' && token <= 'z' || token >= '0' && token <= '9') {
+          const s = newState(), a = newState();
+          fragStack.push({ start: s, accept: a, states: [s, a], transitions: [{ from: s, symbol: token, to: a }], alphabet: [token] });
+        } else if (token === '.') {
+          const b = fragStack.pop(), a = fragStack.pop();
+          fragStack.push({
+            start: a.start, accept: b.accept,
+            states: [...a.states, ...b.states],
+            transitions: [...a.transitions, ...b.transitions, { from: a.accept, symbol: 'ε', to: b.start }],
+            alphabet: Array.from(new Set([...a.alphabet, ...b.alphabet]))
+          });
+        } else if (token === '|') {
+          const b = fragStack.pop(), a = fragStack.pop();
+          const s = newState(), acc = newState();
+          fragStack.push({
+            start: s, accept: acc,
+            states: [s, acc, ...a.states, ...b.states],
+            transitions: [
+              ...a.transitions, ...b.transitions,
+              { from: s, symbol: 'ε', to: a.start }, { from: s, symbol: 'ε', to: b.start },
+              { from: a.accept, symbol: 'ε', to: acc }, { from: b.accept, symbol: 'ε', to: acc }
+            ],
+            alphabet: Array.from(new Set([...a.alphabet, ...b.alphabet]))
+          });
+        } else if (token === '*') {
+          const a = fragStack.pop();
+          const s = newState(), acc = newState();
+          fragStack.push({
+            start: s, accept: acc,
+            states: [s, acc, ...a.states],
+            transitions: [
+              ...a.transitions,
+              { from: s, symbol: 'ε', to: a.start }, { from: s, symbol: 'ε', to: acc },
+              { from: a.accept, symbol: 'ε', to: a.start }, { from: a.accept, symbol: 'ε', to: acc }
+            ],
+            alphabet: a.alphabet
+          });
+        }
+      }
+
+      const finalFrag = fragStack.pop();
+      const nfa = new Automaton();
+      nfa.states = finalFrag ? finalFrag.states : ["q0"];
+      nfa.alphabet = finalFrag ? finalFrag.alphabet : ["a"];
+      nfa.transitions = finalFrag ? finalFrag.transitions : [];
+      nfa.startState = finalFrag ? finalFrag.start : "q0";
+      nfa.acceptStates = finalFrag ? [finalFrag.accept] : [];
+      return nfa;
+    }
+
+    /* ==========================================================================
+       CYTOSCAPE VISUALIZATION & LAYOUT
+       ========================================================================== */
+    let currentAutomaton = new Automaton();
+    let cy = null;
+    let selectedSource = null;
+
+    document.addEventListener("DOMContentLoaded", () => {
+      initCytoscape();
+      setupEvents();
+      updateUI();
+    });
+
+    function initCytoscape() {
+      cy = cytoscape({
+        container: document.getElementById('cy'),
+        style: [
+          {
+            selector: 'node',
+            style: {
+              'background-color': '#DCD6F7',
+              'border-color': '#424874',
+              'border-width': 2.5,
+              'label': 'data(id)',
+              'color': '#424874',
+              'font-family': 'JetBrains Mono',
+              'font-size': '13px',
+              'font-weight': 'bold',
+              'text-valign': 'center',
+              'text-halign': 'center',
+              'width': 44,
+              'height': 44
+            }
+          },
+          {
+            selector: 'node[?isStartPointer]',
+            style: {
+              'width': 1,
+              'height': 1,
+              'opacity': 0,
+              'label': ''
+            }
+          },
+          {
+            selector: 'node[?isStart]',
+            style: {
+              'background-color': '#424874',
+              'color': '#FFFFFF',
+              'border-color': '#424874',
+              'border-width': 3
+            }
+          },
+          {
+            selector: 'node[?isAccept]',
+            style: {
+              'background-color': '#DCD6F7',
+              'border-color': '#424874',
+              'border-style': 'double',
+              'border-width': 8
+            }
+          },
+          {
+            selector: 'node[?isBoth]',
+            style: {
+              'background-color': '#A6B1E1',
+              'color': '#424874',
+              'border-color': '#424874',
+              'border-style': 'double',
+              'border-width': 8
+            }
+          },
+          {
+            selector: 'edge',
+            style: {
+              'width': 2.5,
+              'line-color': '#424874',
+              'target-arrow-color': '#424874',
+              'target-arrow-shape': 'triangle',
+              'arrow-scale': 1.5,
+              'curve-style': 'bezier',
+              'control-point-step-size': 40,
+              'label': 'data(label)',
+              'color': '#424874',
+              'font-family': 'JetBrains Mono',
+              'font-size': '13px',
+              'font-weight': 'bold',
+              'text-background-color': '#F4EEFF',
+              'text-background-opacity': 1,
+              'text-background-padding': '4px',
+              'text-background-shape': 'roundrectangle'
+            }
+          },
+          {
+            selector: 'edge[?isStartEdge]',
+            style: {
+              'width': 3,
+              'line-color': '#424874',
+              'target-arrow-color': '#424874',
+              'target-arrow-shape': 'triangle',
+              'arrow-scale': 2.0,
+              'label': '',
+              'curve-style': 'straight'
+            }
+          }
+        ]
+      });
+
+      cy.on('tap', 'node', (evt) => {
+        if (evt.target.data('isStartPointer')) return;
+        const id = evt.target.id();
+        if (!selectedSource) {
+          selectedSource = id;
+          evt.target.style('border-color', '#A6B1E1');
+        } else {
+          const sym = prompt(`Add transition ${selectedSource} → ${id} (use 'e' or 'ε' for epsilon):`, "a");
+          if (sym !== null) {
+            const s = (sym === 'e' || sym === 'ε' || sym === '') ? 'ε' : sym.trim();
+            currentAutomaton.transitions.push({ from: selectedSource, symbol: s, to: id });
+            if (s !== 'ε' && !currentAutomaton.alphabet.includes(s)) currentAutomaton.alphabet.push(s);
+            updateUI();
+          }
+          selectedSource = null;
+        }
+      });
+
+      cy.on('cxttap', 'node', (evt) => {
+        if (evt.target.data('isStartPointer')) return;
+        const id = evt.target.id();
+        const action = prompt(`Edit state '${id}':\n1. Set as Start State\n2. Toggle Accept State\n3. Delete State`, "1");
+        if (action === "1") {
+          currentAutomaton.startState = id;
+        } else if (action === "2") {
+          if (currentAutomaton.acceptStates.includes(id)) {
+            currentAutomaton.acceptStates = currentAutomaton.acceptStates.filter(s => s !== id);
+          } else {
+            currentAutomaton.acceptStates.push(id);
+          }
+        } else if (action === "3") {
+          currentAutomaton.states = currentAutomaton.states.filter(s => s !== id);
+          currentAutomaton.acceptStates = currentAutomaton.acceptStates.filter(s => s !== id);
+          if (currentAutomaton.startState === id) currentAutomaton.startState = currentAutomaton.states[0] || null;
+          currentAutomaton.transitions = currentAutomaton.transitions.filter(t => t.from !== id && t.to !== id);
+        }
+        updateUI();
+      });
+    }
+
+    function applyHorizontalRankLayout() {
+      const mode = document.getElementById('layoutSelect').value;
+      if (mode === 'cose') {
+        cy.layout({ name: 'cose', animate: true, padding: 60, nodeRepulsion: 8000 }).run();
+        return;
+      } else if (mode === 'concentric') {
+        cy.layout({ name: 'concentric', animate: true, padding: 60 }).run();
+        return;
+      }
+
+      if (!currentAutomaton.startState || currentAutomaton.states.length === 0) {
+        cy.layout({ name: 'cose', animate: false }).run();
+        return;
+      }
+
+      const ranks = new Map();
+      const queue = [{ id: currentAutomaton.startState, rank: 0 }];
+      ranks.set(currentAutomaton.startState, 0);
+
+      const adj = new Map();
+      for (const s of currentAutomaton.states) adj.set(s, []);
+      for (const t of currentAutomaton.transitions) {
+        if (adj.has(t.from)) adj.get(t.from).push(t.to);
+      }
+
+      while (queue.length > 0) {
+        const { id, rank } = queue.shift();
+        const neighbors = adj.get(id) || [];
+        for (const next of neighbors) {
+          if (!ranks.has(next)) {
+            ranks.set(next, rank + 1);
+            queue.push({ id: next, rank: rank + 1 });
+          }
+        }
+      }
+
+      let maxRank = 0;
+      for (const r of ranks.values()) if (r > maxRank) maxRank = r;
+      for (const s of currentAutomaton.states) {
+        if (!ranks.has(s)) {
+          maxRank++;
+          ranks.set(s, maxRank);
+        }
+      }
+
+      const rankGroups = new Map();
+      for (const [s, r] of ranks.entries()) {
+        if (!rankGroups.has(r)) rankGroups.set(r, []);
+        rankGroups.get(r).push(s);
+      }
+
+      const startPos = { x: 120, y: 240 };
+      const deltaX = 110;
+      const deltaY = 65;
+
+      cy.nodes().forEach(node => {
+        const id = node.id();
+        if (id === '__start_pointer__') {
+          const startRank = ranks.get(currentAutomaton.startState) || 0;
+          const group = rankGroups.get(startRank) || [currentAutomaton.startState];
+          const idx = group.indexOf(currentAutomaton.startState);
+          const startY = startPos.y + (idx - (group.length - 1) / 2) * deltaY;
+          node.position({ x: startPos.x + startRank * deltaX - 60, y: startY });
+          return;
+        }
+
+        const r = ranks.get(id) || 0;
+        const group = rankGroups.get(r) || [id];
+        const idx = group.indexOf(id);
+        const y = startPos.y + (idx - (group.length - 1) / 2) * deltaY;
+        const x = startPos.x + r * deltaX;
+
+        node.position({ x, y });
+      });
+
+      cy.fit(undefined, 60);
+    }
+
+    function updateUI() {
+      const elements = [];
+
+      if (currentAutomaton.startState && currentAutomaton.states.includes(currentAutomaton.startState)) {
+        elements.push({
+          data: { id: '__start_pointer__', isStartPointer: true }
+        });
+        elements.push({
+          data: {
+            id: '__start_edge__',
+            source: '__start_pointer__',
+            target: currentAutomaton.startState,
+            label: '',
+            isStartEdge: true
+          }
+        });
+      }
+
+      for (const s of currentAutomaton.states) {
+        const isStart = s === currentAutomaton.startState;
+        const isAccept = currentAutomaton.acceptStates.includes(s);
+        const isBoth = isStart && isAccept;
+
+        elements.push({
+          data: { id: s, isStart: isStart && !isBoth, isAccept: isAccept && !isBoth, isBoth }
+        });
+      }
+
+      for (const t of currentAutomaton.transitions) {
+        elements.push({
+          data: {
+            id: `${t.from}_${t.symbol}_${t.to}_${Math.random()}`,
+            source: t.from,
+            target: t.to,
+            label: t.symbol
+          }
+        });
+      }
+
+      cy.json({ elements });
+      applyHorizontalRankLayout();
+
+      // Formal Definition
+      document.getElementById('formalDefBox').innerHTML = `
+        <strong>Q</strong> (States) = { ${currentAutomaton.states.join(", ")} }<br>
+        <strong>Σ</strong> (Alphabet) = { ${currentAutomaton.alphabet.join(", ")} }<br>
+        <strong>q₀</strong> (Start) = ${currentAutomaton.startState || 'none'}<br>
+        <strong>F</strong> (Final) = { ${currentAutomaton.acceptStates.join(", ")} }
+      `;
+
+      // Type Badge
+      const isNfa = currentAutomaton.isNFA();
+      document.getElementById('typeBadge').innerText = isNfa ? 'NFA' : 'DFA';
+
+      // Matrix Table
+      const table = document.getElementById('matrixTable');
+      const symbols = isNfa ? [...currentAutomaton.alphabet, 'ε'] : [...currentAutomaton.alphabet];
+      
+      let html = `<thead><tr><th>State</th>`;
+      for (const sym of symbols) html += `<th>${sym}</th>`;
+      html += `</tr></thead><tbody>`;
+
+      for (const state of currentAutomaton.states) {
+        const isStart = state === currentAutomaton.startState;
+        const isAccept = currentAutomaton.acceptStates.includes(state);
+        
+        let rowClass = "";
+        let prefix = "";
+        if (isStart) { prefix += "→ "; rowClass += "row-start "; }
+        if (isAccept) { prefix += "* "; rowClass += "row-accept "; }
+
+        html += `<tr class="${rowClass}"><td class="state-cell">${prefix}${state}</td>`;
+        for (const sym of symbols) {
+          const targets = currentAutomaton.transitions
+            .filter(t => t.from === state && (t.symbol === sym || (sym === 'ε' && (t.symbol === 'e' || t.symbol === ''))))
+            .map(t => t.to)
+            .join(", ");
+
+          html += `<td><input type="text" value="${targets}" onchange="updateCell('${state}', '${sym}', this.value)"></td>`;
+        }
+        html += `</tr>`;
+      }
+      html += `</tbody>`;
+      table.innerHTML = html;
+
+      // Mapping List
+      const mapBox = document.getElementById('mappingList');
+      const keys = Object.keys(currentAutomaton.stateMappings || {});
+      if (keys.length > 0) {
+        mapBox.innerHTML = keys.map(k => {
+          const rawVal = currentAutomaton.stateMappings[k];
+          // Clean nested strings if present
+          const cleanVal = rawVal.replace(/^{{/, '{').replace(/}}$/, '}');
+          return `<div class="mapping-item"><strong>${k}</strong> = ${cleanVal}</div>`;
+        }).join("");
+      } else {
+        mapBox.innerHTML = `<div class="mapping-item" style="color: var(--color-primary); opacity: 0.7;">Standard automaton representation.</div>`;
+      }
+    }
+
+    window.updateCell = function(from, sym, val) {
+      currentAutomaton.transitions = currentAutomaton.transitions.filter(
+        t => !(t.from === from && (t.symbol === sym || (sym === 'ε' && (t.symbol === 'e' || t.symbol === ''))))
+      );
+      const targets = val.split(",").map(s => s.trim()).filter(Boolean);
+      for (const target of targets) {
+        if (!currentAutomaton.states.includes(target)) currentAutomaton.states.push(target);
+        currentAutomaton.transitions.push({ from: from, symbol: sym, to: target });
+      }
+      updateUI();
+    };
+
+    function setupEvents() {
+      // Tab switcher
+      document.querySelectorAll('.nav-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+          document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+          document.querySelectorAll('.tab-pane').forEach(p => p.style.display = 'none');
+          tab.classList.add('active');
+          document.getElementById(tab.dataset.tab).style.display = 'flex';
+        });
+      });
+
+      // Layout Switcher
+      document.getElementById('layoutSelect').addEventListener('change', applyHorizontalRankLayout);
+
+      // Presets
+      document.getElementById('presetSelect').addEventListener('change', (e) => {
+        const val = e.target.value;
+        if (val === 'regex_sample') {
+          currentAutomaton = parseRegexToNFA('(a|b)*abb');
+        } else if (val === 'nfa_sample') {
+          const nfa = new Automaton();
+          nfa.states = ["q0", "q1", "q2"];
+          nfa.alphabet = ["a", "b"];
+          nfa.startState = "q0";
+          nfa.acceptStates = ["q2"];
+          nfa.transitions = [
+            { from: "q0", symbol: "a", to: "q0" },
+            { from: "q0", symbol: "a", to: "q1" },
+            { from: "q1", symbol: "b", to: "q2" }
+          ];
+          currentAutomaton = nfa;
+        } else if (val === 'dfa_minimization') {
+          const dfa = new Automaton();
+          dfa.states = ["A", "B", "C", "D"];
+          dfa.alphabet = ["0", "1"];
+          dfa.startState = "A";
+          dfa.acceptStates = ["C", "D"];
+          dfa.transitions = [
+            { from: "A", symbol: "0", to: "B" }, { from: "A", symbol: "1", to: "C" },
+            { from: "B", symbol: "0", to: "A" }, { from: "B", symbol: "1", to: "D" },
+            { from: "C", symbol: "0", to: "A" }, { from: "C", symbol: "1", to: "C" },
+            { from: "D", symbol: "0", to: "B" }, { from: "D", symbol: "1", to: "D" }
+          ];
+          currentAutomaton = dfa;
+        }
+        updateUI();
+      });
+
+      // Add State / Symbol buttons
+      document.getElementById('btnAddState').addEventListener('click', () => {
+        const input = document.getElementById('newStateInput');
+        const st = input.value.trim() || `q${currentAutomaton.states.length}`;
+        if (!currentAutomaton.states.includes(st)) {
+          currentAutomaton.states.push(st);
+          if (!currentAutomaton.startState) currentAutomaton.startState = st;
+          input.value = "";
+          updateUI();
+        }
+      });
+
+      document.getElementById('btnAddSymbol').addEventListener('click', () => {
+        const input = document.getElementById('newSymbolInput');
+        const sym = input.value.trim() || 'c';
+        if (!currentAutomaton.alphabet.includes(sym)) {
+          currentAutomaton.alphabet.push(sym);
+          input.value = "";
+          updateUI();
+        }
+      });
+
+      // Regex Build
+      document.getElementById('btnBuildRegex').addEventListener('click', () => {
+        const val = document.getElementById('regexInput').value.trim();
+        if (val) {
+          currentAutomaton = parseRegexToNFA(val);
+          updateUI();
+        }
+      });
+
+      // Apply Simple Text
+      document.getElementById('btnApplyText').addEventListener('click', () => {
+        const txt = document.getElementById('simpleTextArea').value.trim();
+        if (!txt) return;
+        const auto = new Automaton();
+        auto.states = []; auto.transitions = []; auto.acceptStates = []; auto.startState = null;
+
+        txt.split("\n").forEach(line => {
+          line = line.trim();
+          if (line.startsWith("->")) {
+            const st = line.substring(2).trim();
+            auto.startState = st;
+            if (!auto.states.includes(st)) auto.states.push(st);
+          } else if (line.endsWith("*")) {
+            const st = line.replace("*", "").trim();
+            if (!auto.acceptStates.includes(st)) auto.acceptStates.push(st);
+            if (!auto.states.includes(st)) auto.states.push(st);
+          } else if (line.includes("--")) {
+            const parts = line.split(/--|-->/);
+            if (parts.length >= 3) {
+              const from = parts[0].trim(), sym = parts[1].trim(), to = parts[2].trim();
+              if (!auto.states.includes(from)) auto.states.push(from);
+              if (!auto.states.includes(to)) auto.states.push(to);
+              auto.transitions.push({ from: from, symbol: sym, to });
+            }
+          }
+        });
+        currentAutomaton = auto;
+        updateUI();
+      });
+
+      // Conversion Buttons
+      document.getElementById('btnConvertNfaDfa').addEventListener('click', () => {
+        const { dfa } = currentAutomaton.toDFA();
+        currentAutomaton = dfa;
+        updateUI();
+      });
+
+      document.getElementById('btnMinimizeDfa').addEventListener('click', () => {
+        if (currentAutomaton.isNFA()) {
+          const { dfa } = currentAutomaton.toDFA();
+          currentAutomaton = dfa;
+        }
+        const { minDFA } = currentAutomaton.minimizeDFA();
+        currentAutomaton = minDFA;
+        updateUI();
+      });
+
+      document.getElementById('btnClear').addEventListener('click', () => {
+        currentAutomaton = new Automaton();
+        currentAutomaton.states = [];
+        currentAutomaton.alphabet = [];
+        currentAutomaton.transitions = [];
+        currentAutomaton.startState = null;
+        currentAutomaton.acceptStates = [];
+        currentAutomaton.stateMappings = {};
+        updateUI();
+      });
+
+      // Canvas Buttons
+      document.getElementById('btnFit').addEventListener('click', () => cy.fit());
+
+      document.getElementById('btnExportPng').addEventListener('click', () => {
+        const png = cy.png({ full: true, bg: '#F4EEFF' });
+        const anchor = document.createElement('a');
+        anchor.href = png;
+        anchor.download = "automaton.png";
+        anchor.click();
+      });
+    }
+  </script>
+</body>
+</html>
