@@ -19,6 +19,7 @@ A slick, hyperminimalist, single-page web application for constructing, converti
 - **Conversion & Minimization Algorithms**:
   - **NFA → DFA (Subset / Powerset Construction)**: Computes full $\epsilon$-closures and generates explicit state mappings.
   - **Hopcroft's DFA Minimization**: Prunes unreachable states and refines partition equivalences to construct minimal DFAs.
+  - **DFA → Regex (State Elimination Algorithm)**: Converts any finite automaton directly into an equivalent Regular Expression.
 - **Export Options**:
   - High-resolution PNG diagram exports.
 

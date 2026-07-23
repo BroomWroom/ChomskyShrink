@@ -423,6 +423,7 @@
 
       <button id="btnConvertNfaDfa" class="btn btn-accent">Convert NFA → DFA</button>
       <button id="btnMinimizeDfa" class="btn btn-primary">Minimize DFA</button>
+      <button id="btnConvertDfaRegex" class="btn btn-accent">DFA → Regex</button>
       <button id="btnClear" class="btn btn-sm">Clear</button>
     </div>
   </header>
@@ -751,6 +752,134 @@
         }
 
         return { minDFA, logStr: `Minimized DFA.` };
+      }
+
+      toRegex() {
+        if (!this.startState || this.states.length === 0 || this.acceptStates.length === 0) {
+          return "∅";
+        }
+
+        function isAtomic(expr) {
+          if (!expr) return true;
+          if (expr.length <= 1) return true;
+          if (expr.startsWith('(') && expr.endsWith(')')) {
+            let depth = 0;
+            for (let i = 0; i < expr.length; i++) {
+              if (expr[i] === '(') depth++;
+              else if (expr[i] === ')') depth--;
+              if (depth === 0 && i < expr.length - 1) return false;
+            }
+            return true;
+          }
+          return false;
+        }
+
+        function combineUnion(e1, e2) {
+          if (!e1 || e1 === '∅') return e2 || null;
+          if (!e2 || e2 === '∅') return e1 || null;
+          if (e1 === e2) return e1;
+          return `${e1}|${e2}`;
+        }
+
+        function combineConcat(e1, e2) {
+          if (!e1 || !e2 || e1 === '∅' || e2 === '∅') return null;
+          if (e1 === 'ε') return e2;
+          if (e2 === 'ε') return e1;
+
+          let p1 = (e1.includes('|') && !isAtomic(e1)) ? `(${e1})` : e1;
+          let p2 = (e2.includes('|') && !isAtomic(e2)) ? `(${e2})` : e2;
+          return p1 + p2;
+        }
+
+        function combineStar(e) {
+          if (!e || e === 'ε' || e === '∅') return 'ε';
+          if (e.endsWith('*') && isAtomic(e)) return e;
+          if (isAtomic(e)) return e + '*';
+          return `(${e})*`;
+        }
+
+        const S_NEW = "__start_state__";
+        const F_NEW = "__accept_state__";
+
+        const allStates = [S_NEW, ...this.states, F_NEW];
+
+        const R = new Map();
+        for (const u of allStates) {
+          R.set(u, new Map());
+        }
+
+        const rawTrans = new Map();
+        for (const t of this.transitions) {
+          const sym = (t.symbol === 'e' || t.symbol === '' || t.symbol === 'ε') ? 'ε' : t.symbol;
+          const key = `${t.from}__${t.to}`;
+          if (!rawTrans.has(key)) rawTrans.set(key, new Set());
+          rawTrans.get(key).add(sym);
+        }
+
+        for (const [key, symSet] of rawTrans.entries()) {
+          const [u, v] = key.split("__");
+          const arr = Array.from(symSet);
+          let uExpr = arr[0];
+          for (let i = 1; i < arr.length; i++) {
+            uExpr = combineUnion(uExpr, arr[i]);
+          }
+          if (this.states.includes(u) && this.states.includes(v)) {
+            R.get(u).set(v, uExpr);
+          }
+        }
+
+        R.get(S_NEW).set(this.startState, 'ε');
+
+        for (const acc of this.acceptStates) {
+          if (this.states.includes(acc)) {
+            const existing = R.get(acc).get(F_NEW);
+            R.get(acc).set(F_NEW, combineUnion(existing, 'ε'));
+          }
+        }
+
+        for (const q of this.states) {
+          const Rqq = R.get(q).get(q);
+          const RqqStar = Rqq ? combineStar(Rqq) : 'ε';
+
+          const pred = [];
+          for (const u of allStates) {
+            if (u !== q && R.get(u).has(q)) {
+              pred.push(u);
+            }
+          }
+
+          const succ = [];
+          for (const v of allStates) {
+            if (v !== q && R.get(q).has(v)) {
+              succ.push(v);
+            }
+          }
+
+          for (const u of pred) {
+            const Ruq = R.get(u).get(q);
+            for (const v of succ) {
+              const Rqv = R.get(q).get(v);
+              const Ruv = R.get(u).get(v);
+
+              const path = combineConcat(combineConcat(Ruq, RqqStar), Rqv);
+              const newRuv = combineUnion(Ruv, path);
+
+              if (newRuv) {
+                R.get(u).set(v, newRuv);
+              } else {
+                R.get(u).delete(v);
+              }
+            }
+          }
+
+          R.delete(q);
+          for (const u of allStates) {
+            if (R.has(u)) R.get(u).delete(q);
+          }
+        }
+
+        const result = R.get(S_NEW).get(F_NEW);
+        return result || "∅";
       }
     }
 
@@ -1304,6 +1433,27 @@
         const { minDFA } = currentAutomaton.minimizeDFA();
         currentAutomaton = minDFA;
         updateUI();
+      });
+
+      document.getElementById('btnConvertDfaRegex').addEventListener('click', () => {
+        if (!currentAutomaton.startState || currentAutomaton.states.length === 0) {
+          alert("Please build or load an automaton first.");
+          return;
+        }
+        const regex = currentAutomaton.toRegex();
+        
+        const regexInput = document.getElementById('regexInput');
+        if (regexInput) regexInput.value = regex;
+
+        const mapBox = document.getElementById('mappingList');
+        mapBox.innerHTML = `
+          <div class="mapping-item" style="border-color: var(--color-primary); background: rgba(166, 177, 225, 0.25);">
+            <strong>Converted Regex:</strong> <code style="font-size: 0.85rem; color: var(--color-primary); font-weight: bold;">${regex}</code>
+          </div>
+        ` + mapBox.innerHTML;
+
+        const regexTabBtn = document.querySelector('.nav-tab[data-tab="tab-regex"]');
+        if (regexTabBtn) regexTabBtn.click();
       });
 
       document.getElementById('btnClear').addEventListener('click', () => {
