@@ -400,6 +400,33 @@
       color: var(--color-primary);
       z-index: 5;
     }
+
+    /* Modal Popup */
+    .modal-backdrop {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(66, 72, 116, 0.45);
+      backdrop-filter: blur(4px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+    .modal-backdrop.show {
+      display: flex;
+    }
+    .modal-card {
+      background: var(--color-card);
+      border: 2px solid var(--color-primary);
+      border-radius: 10px;
+      padding: 1.25rem;
+      width: 480px;
+      max-width: 90vw;
+      box-shadow: 0 20px 25px -5px rgba(66, 72, 116, 0.25);
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
   </style>
 </head>
 <body>
@@ -433,6 +460,18 @@
 
     <!-- Left Controls Panel -->
     <div class="left-panel">
+      
+      <!-- Converted Regex Result Card -->
+      <div id="regexResultCard" class="card" style="display: none; background: #FFFFFF; border: 2px solid var(--color-primary);">
+        <div class="card-title" style="color: var(--color-primary); font-size: 0.8rem;">
+          <span>✨ Converted Regular Expression</span>
+          <button id="btnCloseRegexCard" class="btn btn-sm" style="padding: 0.1rem 0.35rem;">✕</button>
+        </div>
+        <div style="display: flex; gap: 0.4rem; align-items: center;">
+          <input type="text" id="regexResultText" readonly style="font-size: 0.95rem; font-weight: 700; color: var(--color-primary); background: var(--color-bg); border: 1px solid var(--color-border); padding: 0.5rem;">
+          <button id="btnCopyRegex" class="btn btn-primary btn-sm" style="white-space: nowrap;">📋 Copy</button>
+        </div>
+      </div>
       
       <!-- Input Mode -->
       <div class="card">
@@ -535,6 +574,27 @@
       </div>
     </div>
 
+  </div>
+
+  <!-- Converted Regex Center Modal Popup -->
+  <div id="regexModal" class="modal-backdrop">
+    <div class="modal-card">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <span style="font-weight: 700; font-size: 0.95rem; color: var(--color-primary);">✨ Converted Regular Expression</span>
+        <button id="btnModalCloseRegex" class="btn btn-sm" style="padding: 0.1rem 0.4rem;">✕</button>
+      </div>
+
+      <div style="font-size: 0.8rem; color: var(--color-primary); opacity: 0.85;">
+        State elimination algorithm generated the following equivalent regular expression:
+      </div>
+
+      <textarea id="modalRegexOutput" readonly rows="3" style="font-size: 1.05rem; font-weight: 700; color: var(--color-primary); background: var(--color-bg); border: 1px solid var(--color-border); padding: 0.65rem; border-radius: 6px; resize: none; font-family: var(--font-mono);"></textarea>
+
+      <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+        <button id="btnModalCopyRegex" class="btn btn-primary btn-sm">📋 Copy to Clipboard</button>
+        <button id="btnModalCloseDone" class="btn btn-sm">Close</button>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -841,19 +901,20 @@
         }
 
         for (const q of this.states) {
+          if (!R.has(q)) continue;
           const Rqq = R.get(q).get(q);
           const RqqStar = Rqq ? combineStar(Rqq) : 'ε';
 
           const pred = [];
           for (const u of allStates) {
-            if (u !== q && R.get(u).has(q)) {
+            if (u !== q && R.has(u) && R.get(u).has(q)) {
               pred.push(u);
             }
           }
 
           const succ = [];
           for (const v of allStates) {
-            if (v !== q && R.get(q).has(v)) {
+            if (v !== q && R.has(v) && R.get(q).has(v)) {
               succ.push(v);
             }
           }
@@ -1529,20 +1590,64 @@
           return;
         }
         const regex = currentAutomaton.toRegex();
+
+        // 1. Show Center Modal Popup
+        const modal = document.getElementById('regexModal');
+        const modalText = document.getElementById('modalRegexOutput');
+        if (modal && modalText) {
+          modalText.value = regex;
+          modal.classList.add('show');
+        }
         
+        // 2. Show Result Card on left panel
+        const resultCard = document.getElementById('regexResultCard');
+        const resultText = document.getElementById('regexResultText');
+        if (resultCard && resultText) {
+          resultText.value = regex;
+          resultCard.style.display = 'flex';
+        }
+
+        // 3. Populate Regex Mode tab input
         const regexInput = document.getElementById('regexInput');
         if (regexInput) regexInput.value = regex;
 
+        // 4. Log in Mapping List
         const mapBox = document.getElementById('mappingList');
         mapBox.innerHTML = `
           <div class="mapping-item" style="border-color: var(--color-primary); background: rgba(166, 177, 225, 0.25);">
             <strong>Converted Regex:</strong> <code style="font-size: 0.85rem; color: var(--color-primary); font-weight: bold;">${regex}</code>
           </div>
         ` + mapBox.innerHTML;
-
-        const regexTabBtn = document.querySelector('.nav-tab[data-tab="tab-regex"]');
-        if (regexTabBtn) regexTabBtn.click();
       });
+
+      // Modal Handlers
+      const hideModal = () => document.getElementById('regexModal').classList.remove('show');
+      document.getElementById('btnModalCloseRegex')?.addEventListener('click', hideModal);
+      document.getElementById('btnModalCloseDone')?.addEventListener('click', hideModal);
+
+      document.getElementById('btnModalCopyRegex')?.addEventListener('click', () => {
+        const val = document.getElementById('modalRegexOutput').value;
+        navigator.clipboard.writeText(val).then(() => {
+          const btn = document.getElementById('btnModalCopyRegex');
+          btn.innerText = "✓ Copied!";
+          setTimeout(() => { btn.innerText = "📋 Copy to Clipboard"; }, 1500);
+        });
+      });
+
+      document.getElementById('btnCloseRegexCard')?.addEventListener('click', () => {
+        document.getElementById('regexResultCard').style.display = 'none';
+      });
+
+      const btnCopyRegex = document.getElementById('btnCopyRegex');
+      if (btnCopyRegex) {
+        btnCopyRegex.addEventListener('click', () => {
+          const val = document.getElementById('regexResultText').value;
+          navigator.clipboard.writeText(val).then(() => {
+            btnCopyRegex.innerText = "✓ Copied!";
+            setTimeout(() => { btnCopyRegex.innerText = "📋 Copy"; }, 1500);
+          });
+        });
+      }
 
       document.getElementById('btnClear').addEventListener('click', () => {
         currentAutomaton = new Automaton();
