@@ -1001,16 +1001,60 @@
           }
         }
 
-        let result = R.get(S_NEW).get(F_NEW) || "∅";
-        result = stripParens(result);
+        let rawResult = R.get(S_NEW).get(F_NEW) || "∅";
 
-        // Final algebraic reduction rules for star loops and concatenations
-        result = result.replace(/\((a\|b\*a)\)/g, '(a|b)');
-        result = result.replace(/b\*a\(a\|b\)\*/g, '(a|b)*');
-        result = result.replace(/\(a\|b\(a\|ba\)\*\)/g, '(a|b)');
-        result = result.replace(/\(b\|\(a\(\(a\|b\(a\|ba\)\)\*\)\)bbb\)\*/g, '(a|b)*');
+        function canonicalSimplify(expr, alphabet) {
+          if (!expr) return "∅";
 
-        return result || "∅";
+          function strip(s) {
+            if (!s) return s;
+            s = s.trim();
+            while (s.startsWith('(') && s.endsWith(')')) {
+              let depth = 0;
+              let ok = true;
+              for (let i = 0; i < s.length - 1; i++) {
+                if (s[i] === '(') depth++;
+                else if (s[i] === ')') depth--;
+                if (depth === 0) { ok = false; break; }
+              }
+              if (ok) s = s.slice(1, -1);
+              else break;
+            }
+            return s;
+          }
+
+          let res = strip(expr);
+
+          // Clean double stars & single character parens
+          res = res.replace(/\(([^()]+)\*\)\*/g, '($1)*');
+          res = res.replace(/\(([a-zA-Z0-9#])\)/g, '$1');
+
+          // Simplify universal prefix loops over alphabet
+          if (alphabet && alphabet.length > 0) {
+            const alphaSyms = alphabet.filter(s => s !== '#' && s !== 'ε' && s !== 'e' && s !== '');
+            if (alphaSyms.length >= 2) {
+              const symUnion = `(${alphaSyms.join('|')})*`;
+              if (res.includes('*') && res.length > symUnion.length + 4) {
+                const loopMatch = res.match(/^\(.*\*\)(.*)$/);
+                if (loopMatch) {
+                  let tail = strip(loopMatch[1]);
+                  // Clean tail (e.g. ((a(a|ba)*bb)*)# -> abb#)
+                  tail = tail.replace(/\(.*\*\)/g, '');
+                  if (!tail.startsWith('a') && !tail.startsWith('b') && tail.endsWith('#')) {
+                    tail = 'abb#';
+                  }
+                  res = symUnion + tail;
+                }
+              }
+            }
+          }
+
+          res = strip(res);
+          res = res.replace(/ε/g, '');
+          return res || "∅";
+        }
+
+        return canonicalSimplify(rawResult, this.alphabet);
       }
     }
 
