@@ -1,16 +1,15 @@
-# ⚡ Automata Converter & Minimizer
+#  Automata Converter & Minimizer
 
 A slick, hyperminimalist, single-page web application for constructing, converting, and minimizing Finite Automata (NFA, DFA, Regular Expressions) in real-time. Built with Vanilla JS and Cytoscape.js.
 
 ---
 
-## 🚀 Live Demo
 
-[🔗 Click here to access the Live Demo](YOUR_LIVE_DEMO_URL_HERE)
+[🔗 Click here to Access the Converter](https://chomskyshrink.vercel.app/)
 
 ---
 
-## 🌟 Key Features
+##  Key Features
 
 - **Multi-Modal Automaton Input**:
   - **Quick Controls**: Interactive state & symbol additions.
@@ -25,7 +24,7 @@ A slick, hyperminimalist, single-page web application for constructing, converti
 
 ---
 
-## 🛠️ Built With
+##  Built With
 
 - **HTML5 / CSS3 / JavaScript (ES6+)**
 - **[Cytoscape.js](https://js.cytoscape.org/)** (Graph layout & visualization library via CDN)
