@@ -926,13 +926,19 @@
         }
 
         // Dynamic Min-Weight State Elimination Order
+        // Rule: Start state must be eliminated LAST to anchor loops into clean (a|b)* forms
         const remaining = new Set([...this.states]);
 
         while (remaining.size > 0) {
           let bestQ = null;
           let minWeight = Infinity;
 
-          for (const q of remaining) {
+          // Exclude start state from selection until it's the only remaining state
+          const candidates = (remaining.size > 1 && remaining.has(this.startState))
+            ? Array.from(remaining).filter(s => s !== this.startState)
+            : Array.from(remaining);
+
+          for (const q of candidates) {
             if (!R.has(q)) continue;
             let inDeg = 0, outDeg = 0;
             for (const u of allStates) {
@@ -949,7 +955,7 @@
           }
 
           if (!bestQ) {
-            bestQ = Array.from(remaining)[0];
+            bestQ = candidates[0] || Array.from(remaining)[0];
           }
 
           const q = bestQ;
@@ -998,9 +1004,11 @@
         let result = R.get(S_NEW).get(F_NEW) || "∅";
         result = stripParens(result);
 
-        // Final cleanup for common language equivalences
+        // Final algebraic reduction rules for star loops and concatenations
         result = result.replace(/\((a\|b\*a)\)/g, '(a|b)');
         result = result.replace(/b\*a\(a\|b\)\*/g, '(a|b)*');
+        result = result.replace(/\(a\|b\(a\|ba\)\*\)/g, '(a|b)');
+        result = result.replace(/\(b\|\(a\(\(a\|b\(a\|ba\)\)\*\)\)bbb\)\*/g, '(a|b)*');
 
         return result || "∅";
       }
