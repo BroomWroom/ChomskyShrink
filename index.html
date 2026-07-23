@@ -456,7 +456,10 @@
 
         <div id="tab-regex" class="tab-pane" style="display: none; flex-direction: column; gap: 0.4rem;">
           <input type="text" id="regexInput" placeholder="e.g. (a|b)*abb">
-          <button id="btnBuildRegex" class="btn btn-primary btn-sm">Build NFA from Regex</button>
+          <div class="form-row">
+            <button id="btnBuildRegex" class="btn btn-primary btn-sm" style="flex: 1;">Build NFA from Regex</button>
+            <button id="btnBuildDfaFromRegex" class="btn btn-accent btn-sm" style="flex: 1;">Build DFA from Regex</button>
+          </div>
         </div>
 
         <div id="tab-text" class="tab-pane" style="display: none; flex-direction: column; gap: 0.4rem;">
@@ -885,13 +888,20 @@
 
     /* Thompson Regex Builder */
     function parseRegexToNFA(regexStr) {
+      if (!regexStr || typeof regexStr !== 'string') return new Automaton();
+
+      const isOperator = (c) => ['(', ')', '|', '*', '+', '?', '.'].includes(c);
+      const isOperand = (c) => !isOperator(c);
+      const canEnd = (c) => isOperand(c) || c === ')' || c === '*' || c === '+' || c === '?';
+      const canStart = (c) => isOperand(c) || c === '(';
+
       let formatted = "";
       for (let i = 0; i < regexStr.length; i++) {
         const c1 = regexStr[i];
         formatted += c1;
         if (i + 1 < regexStr.length) {
           const c2 = regexStr[i + 1];
-          if ((c1 !== '(' && c1 !== '|') && (c2 !== ')' && c2 !== '|' && c2 !== '*' && c2 !== '+' && c2 !== '?')) {
+          if (canEnd(c1) && canStart(c2)) {
             formatted += '.';
           }
         }
@@ -902,13 +912,21 @@
 
       for (let i = 0; i < formatted.length; i++) {
         const token = formatted[i];
-        if (token >= 'a' && token <= 'z' || token >= '0' && token <= '9') output.push(token);
-        else if (token === '(') stack.push(token);
-        else if (token === ')') {
-          while (stack.length > 0 && stack[stack.length - 1] !== '(') output.push(stack.pop());
-          stack.pop();
+        if (isOperand(token)) {
+          output.push(token);
+        } else if (token === '(') {
+          stack.push(token);
+        } else if (token === ')') {
+          while (stack.length > 0 && stack[stack.length - 1] !== '(') {
+            output.push(stack.pop());
+          }
+          if (stack.length > 0) stack.pop(); // Pop '('
         } else if (precedence[token]) {
-          while (stack.length > 0 && stack[stack.length - 1] !== '(' && precedence[stack[stack.length - 1]] >= precedence[token]) {
+          while (
+            stack.length > 0 &&
+            stack[stack.length - 1] !== '(' &&
+            precedence[stack[stack.length - 1]] >= precedence[token]
+          ) {
             output.push(stack.pop());
           }
           stack.push(token);
@@ -921,40 +939,88 @@
       const fragStack = [];
 
       for (const token of output) {
-        if (token >= 'a' && token <= 'z' || token >= '0' && token <= '9') {
+        if (isOperand(token)) {
           const s = newState(), a = newState();
-          fragStack.push({ start: s, accept: a, states: [s, a], transitions: [{ from: s, symbol: token, to: a }], alphabet: [token] });
+          fragStack.push({
+            start: s,
+            accept: a,
+            states: [s, a],
+            transitions: [{ from: s, symbol: token, to: a }],
+            alphabet: [token]
+          });
         } else if (token === '.') {
+          if (fragStack.length < 2) continue;
           const b = fragStack.pop(), a = fragStack.pop();
           fragStack.push({
-            start: a.start, accept: b.accept,
+            start: a.start,
+            accept: b.accept,
             states: [...a.states, ...b.states],
             transitions: [...a.transitions, ...b.transitions, { from: a.accept, symbol: 'ε', to: b.start }],
             alphabet: Array.from(new Set([...a.alphabet, ...b.alphabet]))
           });
         } else if (token === '|') {
+          if (fragStack.length < 2) continue;
           const b = fragStack.pop(), a = fragStack.pop();
           const s = newState(), acc = newState();
           fragStack.push({
-            start: s, accept: acc,
+            start: s,
+            accept: acc,
             states: [s, acc, ...a.states, ...b.states],
             transitions: [
               ...a.transitions, ...b.transitions,
-              { from: s, symbol: 'ε', to: a.start }, { from: s, symbol: 'ε', to: b.start },
-              { from: a.accept, symbol: 'ε', to: acc }, { from: b.accept, symbol: 'ε', to: acc }
+              { from: s, symbol: 'ε', to: a.start },
+              { from: s, symbol: 'ε', to: b.start },
+              { from: a.accept, symbol: 'ε', to: acc },
+              { from: b.accept, symbol: 'ε', to: acc }
             ],
             alphabet: Array.from(new Set([...a.alphabet, ...b.alphabet]))
           });
         } else if (token === '*') {
+          if (fragStack.length < 1) continue;
           const a = fragStack.pop();
           const s = newState(), acc = newState();
           fragStack.push({
-            start: s, accept: acc,
+            start: s,
+            accept: acc,
             states: [s, acc, ...a.states],
             transitions: [
               ...a.transitions,
-              { from: s, symbol: 'ε', to: a.start }, { from: s, symbol: 'ε', to: acc },
-              { from: a.accept, symbol: 'ε', to: a.start }, { from: a.accept, symbol: 'ε', to: acc }
+              { from: s, symbol: 'ε', to: a.start },
+              { from: s, symbol: 'ε', to: acc },
+              { from: a.accept, symbol: 'ε', to: a.start },
+              { from: a.accept, symbol: 'ε', to: acc }
+            ],
+            alphabet: a.alphabet
+          });
+        } else if (token === '+') {
+          if (fragStack.length < 1) continue;
+          const a = fragStack.pop();
+          const s = newState(), acc = newState();
+          fragStack.push({
+            start: s,
+            accept: acc,
+            states: [s, acc, ...a.states],
+            transitions: [
+              ...a.transitions,
+              { from: s, symbol: 'ε', to: a.start },
+              { from: a.accept, symbol: 'ε', to: a.start },
+              { from: a.accept, symbol: 'ε', to: acc }
+            ],
+            alphabet: a.alphabet
+          });
+        } else if (token === '?') {
+          if (fragStack.length < 1) continue;
+          const a = fragStack.pop();
+          const s = newState(), acc = newState();
+          fragStack.push({
+            start: s,
+            accept: acc,
+            states: [s, acc, ...a.states],
+            transitions: [
+              ...a.transitions,
+              { from: s, symbol: 'ε', to: a.start },
+              { from: s, symbol: 'ε', to: acc },
+              { from: a.accept, symbol: 'ε', to: acc }
             ],
             alphabet: a.alphabet
           });
@@ -1378,14 +1444,36 @@
         }
       });
 
-      // Regex Build
+      // Regex Build NFA
       document.getElementById('btnBuildRegex').addEventListener('click', () => {
         const val = document.getElementById('regexInput').value.trim();
         if (val) {
-          currentAutomaton = parseRegexToNFA(val);
-          updateUI();
+          try {
+            currentAutomaton = parseRegexToNFA(val);
+            updateUI();
+          } catch (err) {
+            alert("Error parsing Regex: " + err.message);
+          }
         }
       });
+
+      // Regex Build DFA directly
+      const btnBuildDfa = document.getElementById('btnBuildDfaFromRegex');
+      if (btnBuildDfa) {
+        btnBuildDfa.addEventListener('click', () => {
+          const val = document.getElementById('regexInput').value.trim();
+          if (val) {
+            try {
+              const nfa = parseRegexToNFA(val);
+              const { dfa } = nfa.toDFA();
+              currentAutomaton = dfa;
+              updateUI();
+            } catch (err) {
+              alert("Error converting Regex to DFA: " + err.message);
+            }
+          }
+        });
+      }
 
       // Apply Simple Text
       document.getElementById('btnApplyText').addEventListener('click', () => {
