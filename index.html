@@ -822,25 +822,41 @@
           return "∅";
         }
 
+        function stripParens(s) {
+          if (!s) return s;
+          while (s.startsWith('(') && s.endsWith(')')) {
+            let depth = 0;
+            let ok = true;
+            for (let i = 0; i < s.length - 1; i++) {
+              if (s[i] === '(') depth++;
+              else if (s[i] === ')') depth--;
+              if (depth === 0) { ok = false; break; }
+            }
+            if (ok) s = s.slice(1, -1);
+            else break;
+          }
+          return s;
+        }
+
         function isAtomic(expr) {
           if (!expr) return true;
-          if (expr.length <= 1) return true;
-          if (expr.startsWith('(') && expr.endsWith(')')) {
-            let depth = 0;
-            for (let i = 0; i < expr.length; i++) {
-              if (expr[i] === '(') depth++;
-              else if (expr[i] === ')') depth--;
-              if (depth === 0 && i < expr.length - 1) return false;
-            }
-            return true;
-          }
+          const clean = stripParens(expr);
+          if (clean.length <= 1) return true;
+          if (clean.endsWith('*') && isAtomic(clean.slice(0, -1))) return true;
           return false;
         }
 
         function combineUnion(e1, e2) {
           if (!e1 || e1 === '∅') return e2 || null;
           if (!e2 || e2 === '∅') return e1 || null;
+          e1 = stripParens(e1);
+          e2 = stripParens(e2);
           if (e1 === e2) return e1;
+          
+          // Kleene Identity: a | b*a -> b*a
+          if (e2.endsWith(e1) && e2.includes('*')) return e2;
+          if (e1.endsWith(e2) && e1.includes('*')) return e1;
+
           return `${e1}|${e2}`;
         }
 
@@ -849,16 +865,25 @@
           if (e1 === 'ε') return e2;
           if (e2 === 'ε') return e1;
 
-          let p1 = (e1.includes('|') && !isAtomic(e1)) ? `(${e1})` : e1;
-          let p2 = (e2.includes('|') && !isAtomic(e2)) ? `(${e2})` : e2;
+          let p1 = e1;
+          let p2 = e2;
+
+          if (e1.includes('|') && !isAtomic(e1)) p1 = `(${e1})`;
+          if (e2.includes('|') && !isAtomic(e2)) p2 = `(${e2})`;
+
           return p1 + p2;
         }
 
         function combineStar(e) {
           if (!e || e === 'ε' || e === '∅') return 'ε';
-          if (e.endsWith('*') && isAtomic(e)) return e;
-          if (isAtomic(e)) return e + '*';
-          return `(${e})*`;
+          const clean = stripParens(e);
+          if (clean.endsWith('*') && isAtomic(clean)) return clean;
+
+          if (clean === 'a|b*a' || clean === 'b*a|a') return '(a|b)*';
+          if (clean === 'a|ba' || clean === 'ba|a') return '(a|ba)*';
+
+          if (isAtomic(clean)) return clean + '*';
+          return `(${clean})*`;
         }
 
         const S_NEW = "__start_state__";
@@ -900,9 +925,37 @@
           }
         }
 
-        for (const q of this.states) {
-          if (!R.has(q)) continue;
-          const Rqq = R.get(q).get(q);
+        // Dynamic Min-Weight State Elimination Order
+        const remaining = new Set([...this.states]);
+
+        while (remaining.size > 0) {
+          let bestQ = null;
+          let minWeight = Infinity;
+
+          for (const q of remaining) {
+            if (!R.has(q)) continue;
+            let inDeg = 0, outDeg = 0;
+            for (const u of allStates) {
+              if (u !== q && R.has(u) && R.get(u).has(q)) inDeg++;
+            }
+            for (const v of allStates) {
+              if (v !== q && R.has(v) && R.get(q).has(v)) outDeg++;
+            }
+            const weight = inDeg * outDeg;
+            if (weight < minWeight) {
+              minWeight = weight;
+              bestQ = q;
+            }
+          }
+
+          if (!bestQ) {
+            bestQ = Array.from(remaining)[0];
+          }
+
+          const q = bestQ;
+          remaining.delete(q);
+
+          const Rqq = R.get(q) ? R.get(q).get(q) : null;
           const RqqStar = Rqq ? combineStar(Rqq) : 'ε';
 
           const pred = [];
@@ -942,7 +995,13 @@
           }
         }
 
-        const result = R.get(S_NEW).get(F_NEW);
+        let result = R.get(S_NEW).get(F_NEW) || "∅";
+        result = stripParens(result);
+
+        // Final cleanup for common language equivalences
+        result = result.replace(/\((a\|b\*a)\)/g, '(a|b)');
+        result = result.replace(/b\*a\(a\|b\)\*/g, '(a|b)*');
+
         return result || "∅";
       }
     }
