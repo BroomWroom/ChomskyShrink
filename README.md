@@ -1,9 +1,4 @@
 
-#  ChomskyShrink
-
-> **A precision finite state automata workbench engineered for determinization, state minimization, formal language theory, and competitive automata practice.**
-
-
 
 # ChomskyShrink
 
