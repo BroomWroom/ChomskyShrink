@@ -1,74 +1,77 @@
-
 # ChomskyShrink
 
-> **A precision finite state automata workbench engineered for determinization, state minimization, formal language theory, and competitive automata practice.**
+> **A precision finite state automata workbench engineered for determinization, Hopcroft state minimization, formal language theory, and competitive automata practice.**
 
+[![GitHub Repo](https://img.shields.io/badge/GitHub-BroomWroom%2FChomskyShrink-181717?style=flat&logo=github)](https://github.com/BroomWroom/ChomskyShrink)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue.svg)](https://www.typescriptlang.org/)
 [![React](https://img.shields.io/badge/React-18.3-61dafb.svg)](https://reactjs.org/)
 [![Vite](https://img.shields.io/badge/Vite-6.1-646cff.svg)](https://vitejs.dev/)
 [![Tailwind CSS](https://img.shields.io/badge/TailwindCSS-3.4-38bdf8.svg)](https://tailwindcss.com/)
-
-
-
----
-
-**ChomskyShrink** is an interactive, browser-based theoretical computer science suite designed for university students, educators, and software engineers. It unifies **visual state machine construction**, **Rabin-Scott subset determinization**, **Hopcroft partition minimization**, **Thompson regex compilation**, and **automated challenge grading** in a single client-side application.
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 ---
 
-## Key Features
+## 📌 Overview
 
-### 1.Finite State Automata Studio
-- **Interactive Visual Canvas**: Drag-and-drop state creation, customizable initial states, double-ring accept states, and multi-symbol transitions.
-- **Multi-Modal Input**:
-  - Drag-and-drop visual palette
-  - Direct point-and-click state connector
-  - Thompson regular expression parser (e.g. `(a|b)*abb`)
-  - Simple declarative text notation (e.g. `->q0`, `q0 --a--> q1`, `q1*`)
-- **Automated Rank Layout**: Horizontal topological state layout with incoming virtual start pointers and curved loop arcs.
-- **Export & Share**: High-resolution PNG diagram export with transparent or canvas background.
+**ChomskyShrink** is an interactive, browser-based theoretical computer science suite designed for university students, educators, and software engineers. It unifies **visual state machine design**, **Rabin-Scott subset determinization**, **Hopcroft partition minimization**, **Thompson regex compilation**, **interactive video lessons**, and **automated challenge grading** into a single client-side application.
 
-### 2.Theoretical Conversion & Minimization Engines
+---
+
+##  Key Features
+
+### 1. Finite State Automata Studio
+- **Interactive Visual Canvas**: Drag-and-drop state creation, configurable initial states, double-ring accept states, and multi-symbol transitions powered by [Cytoscape.js](https://js.cytoscape.org/).
+- **Multi-Modal Automata Construction**:
+  - **Drag-and-Drop Visual Palette**: Drag normal states, start anchors ($q_0$), and accept nodes ($q^*$) directly onto the canvas.
+  - **Direct Point-and-Click Connector**: Click a source node and target node to link transition arrows with arbitrary symbols or $\varepsilon$.
+  - **Thompson Regular Expression Parser**: Converts standard regular expressions (e.g. `(a|b)*abb`) directly into equivalent non-deterministic finite automata.
+  - **Declarative Text Notation**: Input automata with simple arrow notation (e.g. `->q0`, `q0 --a--> q1`, `q1*`).
+- **Bidirectional Transition Matrix ($\delta$)**: Real-time transition matrix table with live dropdown repointing, inline state renaming, dynamic row/column additions, and $\varepsilon$-move toggling.
+- **Topological Rank Layout**: Clean horizontal auto-layout with virtual start pointers and curved loop arcs.
+- **High-Resolution PNG Export**: Export publication-quality state diagrams with theme-aware canvas backgrounds.
+
+### 2. Theoretical Conversion & Minimization Engines
 - **Rabin-Scott Subset Construction ($\text{NFA} \to \text{DFA}$)**:
-  - Complete recursive $\epsilon$-closure computation across arbitrary branching depths.
-  - Generates power-state subset lookup tables ($\mathcal{P}(Q)$).
+  - Complete recursive $\varepsilon$-closure computation ($\text{ECLOSE}(q)$) across arbitrary branching depths.
+  - Generates power-state subset lookup tables ($\mathcal{P}(Q)$) with formal step-by-step mapping.
 - **Hopcroft & Moore Partition Refinement (DFA Minimization)**:
-  - Unreachable state pruning from the start anchor.
-  - Multi-class partition refinement: separates accept and non-accept partitions iteratively until fixed-point equilibrium is reached.
+  - Start-state reachability analysis and dead state pruning.
+  - Multi-class partition refinement: iteratively partitions equivalence classes ($P_i \to P_{i+1}$) until fixed-point equilibrium is reached.
   - Produces the unique minimal canonical DFA guaranteed by the **Myhill-Nerode Theorem**.
-- **Interactive Conversion Player**: Step-by-step interactive scrubber (Play, Pause, Step Forward/Back, Speed Toggle) showing intermediate graph states and split rationales.
+- **Interactive Conversion Walkthrough Player**: Step-by-step scrubber (Play, Pause, Step Forward/Back, Timeline Slider) highlighting active nodes, partition splits, and theoretical rationales.
 
-### 3. String Execution Simulator with Self-Loop Animations
-- **Universal Dual Simulation**: Accurately simulates deterministic DFAs and non-deterministic NFAs (tracking parallel computation branches).
-- **Self-Loop Execution Animations**: Prominent bezier arc expansion, ember glow, and node ripple bounce animations when processing self-loops ($q \xrightarrow{a} q$).
-- **Live Stream Ribbon**: Visual step-by-step character progression with pass/fail verdict breakdown.
+### 3. Live String Execution Simulator
+- **Dual Engine Simulation**: Simulates deterministic DFAs and branch-tracking non-deterministic NFAs.
+- **Animated Self-Loop Pulses**: Prominent bezier arc expansion, active looping badges, and ripple animations when executing self-loops ($q \xrightarrow{a} q$).
+- **Step-by-Step Timeline Scrubber**: Trace string execution character-by-character with detailed transition logs and accept/reject verdicts.
 
-### 4. 5 Structured Curriculum Tracks & Academic Reference Materials
-- **Track 01**: *Deterministic Automata & Formal Foundations* (5-Tuple, Minimization, Complement Machines)
-- **Track 02**: *Non-Determinism & Powerset Equivalence* (NFAs, $\epsilon$-Moves, Subset Construction, Thompson Algorithm)
-- **Track 03**: *Pattern Recognizers & Modular Arithmetic* (Horner's Modulo Counters, Substring Matchers, Parity Grids)
-- **Track 04**: *Compiler Lexing & Multi-Character Alphabets* (Tokenizers, Floating-Point Literals, Base-3/4 Alphabets)
-- **Track 05**: *Computational Limits & Grammar Hierarchies* (Pumping Lemma Proofs, Myhill-Nerode Equivalence, Moore/Mealy Machines, Chomsky Hierarchy)
-- **Academic Citations**: Includes direct references to *Hopcroft, Motwani & Ullman (2006)*, *Michael Sipser (MIT, 2012)*, and *Rabin & Scott (1959)*.
+### 4. 5 Structured Curriculum Tracks & Video Labs
+- **Track 01**: *Deterministic Automata & Formal Foundations* (5-Tuple definitions, DFA construction, complement machines).
+- **Track 02**: *Non-Determinism & Powerset Equivalence* (NFAs, $\varepsilon$-moves, powerset subset construction, Thompson algorithm).
+- **Track 03**: *Pattern Recognizers & Modular Arithmetic* (Horner's rule modulo counters, substring matchers, parity grids).
+- **Track 04**: *Compiler Lexing & Multi-Character Alphabets* (Tokenizers, floating-point literals, multi-symbol alphabets).
+- **Track 05**: *Computational Limits & Grammar Hierarchies* (Pumping Lemma proofs, Myhill-Nerode equivalence, Moore/Mealy machines, Chomsky hierarchy).
+- **Curated Video Embeds**: High-definition video lectures integrated from *Neso Academy*, *Gate Smashers*, *Knowledge Gate*, and *Easy Theory*.
 
 ### 5. Practice Arena & Automated Test-Suite Grader
-- **5 Categorized Practice Tracks** containing 52 rigorous automata design challenges.
-- **Multi-Case Test Suite Runner**: Evaluates submissions against 10–20 comprehensive edge-case strings.
-- **State Efficiency Grader**: Compares your automaton's state count against the theoretical minimal state bound.
-- **Interactive Workbench Solving Mode**: Edit, test, and verify state machines directly within challenge workbenches.
+- **5 Categorized Practice Tracks**: 52 rigorous theoretical computer science challenges ranging from beginner parity checks to complex lexical parsers.
+- **Automated Multi-Case Test Suite**: Evaluates submissions against 10–20 comprehensive edge-case strings with live visual execution traces.
+- **State Count Bound Grader**: Compares your automaton's state count against theoretical minimal bounds.
+- **Embedded Challenge Workbench**: Design, edit, and test state machines directly within challenge workbenches.
 
 ---
 
-## Tech Stack
+## 🛠️ Tech Stack
 
-- **Framework**: [React 18](https://react.dev/) + [TypeScript](https://www.typescriptlang.org/)
-- **Build Tool**: [Vite 6](https://vitejs.dev/)
-- **Styling**: [Tailwind CSS](https://tailwindcss.com/)
-- **Graph Visualization**: [Cytoscape.js](https://js.cytoscape.org/)
-- **Animations**: [Framer Motion](https://www.framer.com/motion/)
-- **Icons**: [Lucide React](https://lucide.dev/)
-- **Confetti**: [Canvas Confetti](https://www.npmjs.com/package/canvas-confetti)
-
+| Layer | Technology |
+|---|---|
+| **Framework** | [React 18](https://react.dev/) + [TypeScript 5.7](https://www.typescriptlang.org/) |
+| **Build Tool** | [Vite 6](https://vitejs.dev/) |
+| **Styling** | [Tailwind CSS 3.4](https://tailwindcss.com/) |
+| **Graph Engine** | [Cytoscape.js 3.30](https://js.cytoscape.org/) |
+| **Animation Engine** | [Framer Motion 11](https://www.framer.com/motion/) |
+| **Iconography** | [Lucide React](https://lucide.dev/) |
+| **Celebrations** | [Canvas Confetti](https://www.npmjs.com/package/canvas-confetti) |
 
 ---
 
@@ -76,43 +79,82 @@
 
 ```
 ChomskyShrink/
-├── public/                  # Static assets & favicon
+├── public/                       # Static public assets & favicon
 ├── src/
-│   ├── components/          # React UI components
-│   │   ├── ui/              # Atom components (Logo, Dock, etc.)
-│   │   ├── ConverterApp.tsx # Visual DFA/NFA studio & graph canvas
-│   │   ├── ConversionPlayer.tsx # Step-by-step conversion player
-│   │   ├── LandingPage.tsx  # Editorial landing & storytelling view
-│   │   ├── LessonsHub.tsx   # 5-track curriculum & video lab viewer
-│   │   ├── Navbar.tsx       # Top brand header & view navigation
-│   │   ├── NotFoundPage.tsx # 404 dead-state view
-│   │   ├── PracticeGym.tsx  # Challenge arena & auto-grader
-│   │   └── TheoreticalSummary.tsx # Formal definitions & proof breakdowns
+│   ├── components/               # Application UI components
+│   │   ├── ui/                   # Shared UI primitives
+│   │   │   ├── ChomskyLogo.tsx   # Dynamic SVG brand identity logo
+│   │   │   ├── dock.tsx          # Hardware-accelerated 120fps macOS dock
+│   │   │   └── prisma-hero.tsx   # Hero visualizer & animated text banner
+│   │   ├── ConversionPlayer.tsx  # Step-by-step NFA→DFA / Minimization player
+│   │   ├── ConverterApp.tsx      # Dual-mode Cytoscape studio & transition matrix
+│   │   ├── GraderAnalytics.tsx   # Automated test suite & equivalence analytics
+│   │   ├── LandingPage.tsx       # Editorial landing page & live trace visualizer
+│   │   ├── LessonsHub.tsx        # 5-track video lab & curriculum viewer
+│   │   ├── Navbar.tsx            # Navigation header & theme switcher
+│   │   ├── NotFoundPage.tsx      # 404 dead-state route fallback
+│   │   ├── PracticeGym.tsx       # 52-challenge practice arena & auto-grader
+│   │   └── TheoreticalSummary.tsx# 5-tuple breakdown, ε-closure & Hopcroft logs
 │   ├── core/
-│   │   └── automaton.ts     # Core mathematical algorithms (Subset, Hopcroft, Simulation)
+│   │   └── automaton.ts          # Core automata engine (Subset, Hopcroft, BFS, Thompson)
 │   ├── data/
-│   │   ├── challenges.ts    # 52 CS challenge test specifications
-│   │   └── lessons.ts       # 16 curriculum modules across 5 tracks
+│   │   ├── challenges.ts         # 52 CS challenge test specifications
+│   │   └── lessons.ts            # 16 curriculum modules with lecture references
+│   ├── lib/
+│   │   └── utils.ts              # Tailwind class merging & utility helpers
 │   ├── types/
-│   │   └── automaton.ts     # TypeScript interfaces & state definitions
-│   ├── App.tsx              # Root application router & theme state
-│   ├── main.tsx             # Application bootstrap entry point
-│   └── index.css            # Tailwind directives & theme tokens
-├── .gitignore               # Git exclusions
-├── LICENSE                  # MIT License
-├── package.json             # Project dependencies & scripts
-├── tsconfig.json            # TypeScript configuration
-└── vite.config.ts           # Vite build configuration
+│   │   └── automaton.ts          # TypeScript interfaces, 5-tuple definitions & types
+│   ├── App.tsx                   # Root router, theme provider & state container
+│   ├── index.css                 # Tailwind directives, custom fonts & theme tokens
+│   └── main.tsx                  # Vite React application entry point
+├── .gitignore                    # Git exclusions
+├── LICENSE                       # MIT Open Source License
+├── package.json                  # NPM dependencies & build scripts
+├── tsconfig.json                 # TypeScript strict compiler options
+└── vite.config.ts                # Vite bundler configuration
 ```
 
+---
 
-## Academic & Theoretical Attribution
+## 📚 Theoretical Foundations
 
-ChomskyShrink is built upon foundational theorems in theoretical computer science:
-- **Noam Chomsky (1956)**: Formal hierarchy of grammars and regular language classification.
-- **Michael O. Rabin & Dana Scott (1959)**: Finite Automata and Their Decision Problems (Turing Award).
-- **John E. Hopcroft (1971)**: $O(k \cdot n \log n)$ minimal state equivalence partition refinement algorithm.
-- **Anil Nerode & John Myhill (1958)**: Myhill-Nerode Theorem on distinguishable prefix equivalence classes.
-- **Ken Thompson (1968)**: Inductive regular expression compilation into non-deterministic finite automata.
+ChomskyShrink implements rigorous mathematical foundations of theoretical computer science:
+
+1. **Formal 5-Tuple Definition**:
+   $$M = (Q, \Sigma, \delta, q_0, F)$$
+   - $Q$: Finite set of internal states
+   - $\Sigma$: Finite alphabet of input symbols
+   - $\delta$: Transition function ($Q \times \Sigma \to Q$ for DFA, $Q \times (\Sigma \cup \{\varepsilon\}) \to \mathcal{P}(Q)$ for NFA)
+   - $q_0 \in Q$: Start state anchor
+   - $F \subseteq Q$: Set of accept/final states
+
+2. **Rabin-Scott Powerset Determinization (1959)**:
+   - For every NFA $N = (Q_N, \Sigma, \delta_N, q_{0N}, F_N)$, there exists an equivalent deterministic finite automaton $D = (Q_D, \Sigma, \delta_D, q_{0D}, F_D)$ where $Q_D \subseteq \mathcal{P}(Q_N)$.
+
+3. **Hopcroft Partition Refinement (1971)**:
+   - Divides state space $Q$ into initial partition $P = \{F, Q \setminus F\}$. Iteratively refines partitions using inverse transition preimage splitters $\delta^{-1}(B, a)$ in $O(|\Sigma| \cdot |Q| \log |Q|)$ time.
+
+4. **Myhill-Nerode Theorem (1958)**:
+   - A language $L$ is regular if and only if the number of equivalence classes of its prefix relation $R_L$ is finite. The minimum DFA is unique up to state isomorphism.
+
+5. **Thompson's Inductive Construction (1968)**:
+   - Recursively compiles regular expressions (base symbols, concatenation, alternation, and Kleene star) into equivalent $\varepsilon$-NFAs with single start and accept states.
 
 ---
+
+## Credits & Attributions
+
+
+### Video Lecture Attributions
+Educational video embeds across the 5 curriculum tracks are sourced with deep gratitude from premier computer science educators:
+- **[Neso Academy](https://www.youtube.com/@nesoacademy)**
+- **[Gate Smashers](https://www.youtube.com/@GateSmashers)**
+- **[Knowledge Gate](https://www.youtube.com/@KnowledgeGate_ai)**
+- **[Easy Theory](https://www.youtube.com/@EasyTheory)**
+
+---
+
+## 📄 License
+
+This project is open-source software licensed under the [MIT License](LICENSE).
+Feel free to use, modify, and distribute it for academic and educational purposes.
