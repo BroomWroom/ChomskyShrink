@@ -7,7 +7,6 @@ import {
   Github,
   Globe,
   FileText,
-  Sparkles,
   BookOpen,
   Trophy,
   Cpu,
@@ -15,9 +14,11 @@ import {
   CheckCircle2,
   Heart,
   ExternalLink,
-  MessageSquare,
-  ShieldCheck,
-  X
+  Users,
+  Video,
+  X,
+  Zap,
+  Code2
 } from "lucide-react";
 import { ChomskyLogo } from "./ui/ChomskyLogo";
 import { Dock, DockIcon, DockItem, DockLabel } from "./ui/dock";
@@ -51,37 +52,49 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, isDark = t
 
   const primaryBg = isDark ? "#100904" : "#F4EEFF";
   const surfaceBg = isDark ? "#1a1007" : "#FFFFFF";
+  const innerBg = isDark ? "#100904" : "#F8F6FF";
+  const elevatedBg = isDark ? "#382416" : "#DCD6F7";
   const borderColor = isDark ? "#40372e" : "#DCD6F7";
   const textColor = isDark ? "#ffedd7" : "#424874";
   const mutedText = isDark ? "#a69888" : "#5f6594";
   const dimText = isDark ? "#6c5f51" : "#8b92be";
 
-  // Footer Dock: Contacts, Emails, Credits (No Theory redirection)
+  // Footer Dock: Core App Modes + External Contacts & Credits
   const footerDockData = [
     {
+      title: "Automata Studio",
+      icon: <Zap className="h-full w-full text-[#dc5000]" />,
+      action: () => onNavigate?.("converter"),
+    },
+    {
+      title: "Interactive Lessons",
+      icon: <BookOpen className="h-full w-full" style={{ color: textColor }} />,
+      action: () => onNavigate?.("lessons"),
+    },
+    {
+      title: "Practice Arena",
+      icon: <Code2 className="h-full w-full" style={{ color: textColor }} />,
+      action: () => onNavigate?.("practice"),
+    },
+    {
       title: "Email Support",
-      icon: <Mail className="h-full w-full text-[#ffedd7]" />,
-      action: () => window.open("mailto:support@chomskyshrink.internal", "_blank"),
+      icon: <Mail className="h-full w-full" style={{ color: textColor }} />,
+      action: () => {
+        window.open(
+          "https://outlook.live.com/mail/0/deeplink/compose?to=tanishwalture@gmail.com&subject=ChomskyShrink%20Support%20%26%20Feedback",
+          "_blank"
+        );
+      },
     },
     {
       title: "GitHub Repository",
-      icon: <Github className="h-full w-full text-[#ffedd7]" />,
-      action: () => window.open("https://github.com", "_blank"),
+      icon: <Github className="h-full w-full" style={{ color: textColor }} />,
+      action: () => window.open("https://github.com/BroomWroom/ChomskyShrink", "_blank"),
     },
     {
-      title: "Academic Credits",
-      icon: <FileText className="h-full w-full text-[#ffedd7]" />,
+      title: "Credits",
+      icon: <FileText className="h-full w-full" style={{ color: textColor }} />,
       action: () => setShowCreditsModal(true),
-    },
-    {
-      title: "Community & Feedback",
-      icon: <MessageSquare className="h-full w-full text-[#ffedd7]" />,
-      action: () => window.open("mailto:feedback@chomskyshrink.internal", "_blank"),
-    },
-    {
-      title: "System Sandbox",
-      icon: <ShieldCheck className="h-full w-full text-[#ffedd7]" />,
-      action: () => alert("ChomskyShrink Engine: 100% Client-Side In-Memory Execution Sandbox."),
     },
   ];
 
@@ -197,9 +210,16 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, isDark = t
                     simStep === 0 ? "scale-110 opacity-100" : "opacity-40"
                   }`}>
                     <div className={`w-8 h-8 rounded-full border-2 border-dashed border-b-0 flex items-center justify-center ${
-                      simStep === 0 ? "border-[#dc5000] animate-spin" : "border-[#6c5f51]"
+                      simStep === 0 ? "border-[#dc5000] animate-spin" : (isDark ? "border-[#6c5f51]" : "border-[#8b92be]")
                     }`}>
-                      <span className="text-[9px] font-mono font-bold text-[#ffedd7] bg-[#382416] px-1 rounded -mt-6">
+                      <span 
+                        className="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded -mt-6 border shadow-sm"
+                        style={{
+                          backgroundColor: isDark ? "#382416" : "#FFFFFF",
+                          borderColor: isDark ? "#40372e" : "#DCD6F7",
+                          color: textColor
+                        }}
+                      >
                         b
                       </span>
                     </div>
@@ -209,13 +229,17 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, isDark = t
                     onClick={() => setSimStep(0)}
                     className={`w-14 h-14 rounded-full border-2 flex flex-col items-center justify-center cursor-pointer transition-all duration-300 ${
                       simulationStates[simStep].state === "q0"
-                        ? "scale-110 ring-4 ring-[#dc5000] bg-[#382416]"
-                        : "bg-[#100904]"
+                        ? "scale-110 ring-4 ring-[#dc5000]"
+                        : ""
                     }`}
-                    style={{ borderColor: textColor }}
+                    style={{
+                      backgroundColor: simulationStates[simStep].state === "q0" ? elevatedBg : (isDark ? "#100904" : "#FFFFFF"),
+                      borderColor: isDark ? "#ffedd7" : "#424874",
+                      color: textColor
+                    }}
                   >
                     <span className="font-mono text-sm font-bold" style={{ color: textColor }}>q₀</span>
-                    <span className="text-[8px] font-mono text-[#dc5000] -mt-0.5">
+                    <span className="text-[8px] font-mono text-[#dc5000] font-bold -mt-0.5">
                       {simStep === 0 ? "↺ LOOP" : "START"}
                     </span>
                   </div>
@@ -224,13 +248,28 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, isDark = t
 
                 {/* Arrow q0 -> q1 */}
                 <div className="flex-1 flex flex-col items-center relative -mt-4">
-                  <span className="text-[11px] font-mono font-bold text-[#ffedd7] bg-[#382416] px-1.5 py-0.5 rounded border border-[#40372e]">
+                  <span 
+                    className="text-[11px] font-mono font-bold px-1.5 py-0.5 rounded border shadow-sm"
+                    style={{
+                      backgroundColor: isDark ? "#382416" : "#FFFFFF",
+                      borderColor: isDark ? "#40372e" : "#DCD6F7",
+                      color: textColor
+                    }}
+                  >
                     a
                   </span>
-                  <div className={`w-full h-0.5 transition-all duration-300 ${
-                    simStep >= 1 ? "bg-[#dc5000]" : "bg-[#40372e]"
-                  }`} />
-                  <span className="text-[10px] -mt-2 text-[#40372e]">▶</span>
+                  <div 
+                    className="w-full h-0.5 transition-all duration-300"
+                    style={{
+                      backgroundColor: simStep >= 1 ? "#dc5000" : (isDark ? "#40372e" : "#DCD6F7")
+                    }}
+                  />
+                  <span 
+                    className="text-[10px] -mt-2 transition-colors duration-300"
+                    style={{ color: simStep >= 1 ? "#dc5000" : (isDark ? "#40372e" : "#DCD6F7") }}
+                  >
+                    ▶
+                  </span>
                 </div>
 
                 {/* State q1 */}
@@ -239,26 +278,45 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, isDark = t
                     onClick={() => setSimStep(1)}
                     className={`w-14 h-14 rounded-full border-2 flex flex-col items-center justify-center cursor-pointer transition-all duration-300 ${
                       simulationStates[simStep].state === "q1"
-                        ? "scale-110 ring-4 ring-[#dc5000] bg-[#382416]"
-                        : "bg-[#100904]"
+                        ? "scale-110 ring-4 ring-[#dc5000]"
+                        : ""
                     }`}
-                    style={{ borderColor: textColor }}
+                    style={{
+                      backgroundColor: simulationStates[simStep].state === "q1" ? elevatedBg : (isDark ? "#100904" : "#FFFFFF"),
+                      borderColor: isDark ? "#ffedd7" : "#424874",
+                      color: textColor
+                    }}
                   >
                     <span className="font-mono text-sm font-bold" style={{ color: textColor }}>q₁</span>
-                    <span className="text-[8px] font-mono opacity-60 -mt-0.5">a-seen</span>
+                    <span className="text-[8px] font-mono opacity-80 -mt-0.5" style={{ color: mutedText }}>a-seen</span>
                   </div>
                   <span className="text-[9px] font-mono" style={{ color: dimText }}>q₁</span>
                 </div>
 
                 {/* Arrow q1 -> q2 */}
                 <div className="flex-1 flex flex-col items-center relative -mt-4">
-                  <span className="text-[11px] font-mono font-bold text-[#ffedd7] bg-[#382416] px-1.5 py-0.5 rounded border border-[#40372e]">
+                  <span 
+                    className="text-[11px] font-mono font-bold px-1.5 py-0.5 rounded border shadow-sm"
+                    style={{
+                      backgroundColor: isDark ? "#382416" : "#FFFFFF",
+                      borderColor: isDark ? "#40372e" : "#DCD6F7",
+                      color: textColor
+                    }}
+                  >
                     b
                   </span>
-                  <div className={`w-full h-0.5 transition-all duration-300 ${
-                    simStep >= 2 ? "bg-[#dc5000]" : "bg-[#40372e]"
-                  }`} />
-                  <span className="text-[10px] -mt-2 text-[#40372e]">▶</span>
+                  <div 
+                    className="w-full h-0.5 transition-all duration-300"
+                    style={{
+                      backgroundColor: simStep >= 2 ? "#dc5000" : (isDark ? "#40372e" : "#DCD6F7")
+                    }}
+                  />
+                  <span 
+                    className="text-[10px] -mt-2 transition-colors duration-300"
+                    style={{ color: simStep >= 2 ? "#dc5000" : (isDark ? "#40372e" : "#DCD6F7") }}
+                  >
+                    ▶
+                  </span>
                 </div>
 
                 {/* State q2 */}
@@ -267,26 +325,45 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, isDark = t
                     onClick={() => setSimStep(2)}
                     className={`w-14 h-14 rounded-full border-2 flex flex-col items-center justify-center cursor-pointer transition-all duration-300 ${
                       simulationStates[simStep].state === "q2"
-                        ? "scale-110 ring-4 ring-[#dc5000] bg-[#382416]"
-                        : "bg-[#100904]"
+                        ? "scale-110 ring-4 ring-[#dc5000]"
+                        : ""
                     }`}
-                    style={{ borderColor: textColor }}
+                    style={{
+                      backgroundColor: simulationStates[simStep].state === "q2" ? elevatedBg : (isDark ? "#100904" : "#FFFFFF"),
+                      borderColor: isDark ? "#ffedd7" : "#424874",
+                      color: textColor
+                    }}
                   >
                     <span className="font-mono text-sm font-bold" style={{ color: textColor }}>q₂</span>
-                    <span className="text-[8px] font-mono opacity-60 -mt-0.5">ab-seen</span>
+                    <span className="text-[8px] font-mono opacity-80 -mt-0.5" style={{ color: mutedText }}>ab-seen</span>
                   </div>
                   <span className="text-[9px] font-mono" style={{ color: dimText }}>q₂</span>
                 </div>
 
                 {/* Arrow q2 -> q3 */}
                 <div className="flex-1 flex flex-col items-center relative -mt-4">
-                  <span className="text-[11px] font-mono font-bold text-[#ffedd7] bg-[#382416] px-1.5 py-0.5 rounded border border-[#40372e]">
+                  <span 
+                    className="text-[11px] font-mono font-bold px-1.5 py-0.5 rounded border shadow-sm"
+                    style={{
+                      backgroundColor: isDark ? "#382416" : "#FFFFFF",
+                      borderColor: isDark ? "#40372e" : "#DCD6F7",
+                      color: textColor
+                    }}
+                  >
                     b
                   </span>
-                  <div className={`w-full h-0.5 transition-all duration-300 ${
-                    simStep >= 3 ? "bg-[#dc5000]" : "bg-[#40372e]"
-                  }`} />
-                  <span className="text-[10px] -mt-2 text-[#40372e]">▶</span>
+                  <div 
+                    className="w-full h-0.5 transition-all duration-300"
+                    style={{
+                      backgroundColor: simStep >= 3 ? "#dc5000" : (isDark ? "#40372e" : "#DCD6F7")
+                    }}
+                  />
+                  <span 
+                    className="text-[10px] -mt-2 transition-colors duration-300"
+                    style={{ color: simStep >= 3 ? "#dc5000" : (isDark ? "#40372e" : "#DCD6F7") }}
+                  >
+                    ▶
+                  </span>
                 </div>
 
                 {/* State q3* (Accept State Double Ring) */}
@@ -295,13 +372,17 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, isDark = t
                     onClick={() => setSimStep(3)}
                     className={`w-14 h-14 rounded-full border-[3px] border-double flex flex-col items-center justify-center cursor-pointer transition-all duration-300 ${
                       simulationStates[simStep].state === "q3"
-                        ? "scale-110 ring-4 ring-[#dc5000] bg-[#382416]"
-                        : "bg-[#100904]"
+                        ? "scale-110 ring-4 ring-[#dc5000]"
+                        : ""
                     }`}
-                    style={{ borderColor: textColor }}
+                    style={{
+                      backgroundColor: simulationStates[simStep].state === "q3" ? elevatedBg : (isDark ? "#100904" : "#FFFFFF"),
+                      borderColor: isDark ? "#ffedd7" : "#424874",
+                      color: textColor
+                    }}
                   >
                     <span className="font-mono text-sm font-bold" style={{ color: textColor }}>q₃*</span>
-                    <span className="text-[8px] font-mono text-emerald-400 -mt-0.5">ACCEPT</span>
+                    <span className="text-[8px] font-mono font-bold text-emerald-500 -mt-0.5">ACCEPT</span>
                   </div>
                   <span className="text-[9px] font-mono" style={{ color: dimText }}>q₃*</span>
                 </div>
@@ -311,7 +392,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, isDark = t
               {/* Active Trace Stream & Explanation Box */}
               <div 
                 className="rounded-[10px] border p-4 flex flex-col gap-2 font-mono text-xs"
-                style={{ backgroundColor: isDark ? "#100904" : "#F4EEFF", borderColor }}
+                style={{ backgroundColor: innerBg, borderColor }}
               >
                 <div className="flex items-center justify-between text-[11px]">
                   <div className="flex items-center gap-2">
@@ -320,25 +401,30 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, isDark = t
                       {inputChars.map((ch, idx) => (
                         <span
                           key={idx}
-                          className={`px-2 py-0.5 rounded ${
+                          className={`px-2 py-0.5 rounded transition-all ${
                             idx + 1 === simStep
-                              ? "bg-[#dc5000] text-white"
+                              ? "bg-[#dc5000] text-white font-bold scale-105 shadow"
                               : idx + 1 < simStep
-                              ? "bg-emerald-950 text-emerald-300 border border-emerald-800"
-                              : "opacity-40 border border-[#40372e]"
+                              ? (isDark ? "bg-emerald-950 text-emerald-300 border border-emerald-800" : "bg-emerald-100 text-emerald-800 border border-emerald-300")
+                              : "opacity-60 border"
                           }`}
+                          style={
+                            idx + 1 > simStep
+                              ? { backgroundColor: surfaceBg, borderColor, color: dimText }
+                              : undefined
+                          }
                         >
                           {ch}
                         </span>
                       ))}
                     </div>
                   </div>
-                  <span className="text-[10px] uppercase text-[#a69888]">
+                  <span className="text-[10px] uppercase font-mono" style={{ color: mutedText }}>
                     FRAME {simStep + 1} OF 4
                   </span>
                 </div>
 
-                <div className="text-xs pt-1 border-t border-dashed border-[#40372e]" style={{ color: textColor }}>
+                <div className="text-xs pt-1 border-t border-dashed" style={{ borderColor, color: textColor }}>
                   {simulationStates[simStep].desc}
                 </div>
               </div>
@@ -613,21 +699,31 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, isDark = t
             <div className="flex flex-col gap-2 text-xs" style={{ color: mutedText }}>
               <div className="flex items-center gap-2">
                 <Mail className="h-3.5 w-3.5 text-[#dc5000]" />
-                <a href="mailto:support@chomskyshrink.internal" className="hover:underline">
-                  support@chomskyshrink.internal
+                <a
+                  href="https://outlook.live.com/mail/0/deeplink/compose?to=tanishwalture@gmail.com&subject=ChomskyShrink%20Support%20%26%20Feedback"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="hover:underline"
+                >
+                  tanishwalture@gmail.com
                 </a>
               </div>
               <div className="flex items-center gap-2">
                 <Github className="h-3.5 w-3.5 text-[#dc5000]" />
-                <a href="https://github.com" target="_blank" rel="noreferrer" className="hover:underline">
-                  Open Source Reference
+                <a
+                  href="https://github.com/BroomWroom/ChomskyShrink"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="hover:underline"
+                >
+                  BroomWroom/ChomskyShrink
                 </a>
               </div>
               <button 
                 onClick={() => setShowCreditsModal(true)}
                 className="text-left hover:underline text-[#dc5000] cursor-pointer pt-1"
               >
-                View Academic & Theory Credits →
+                View Credits & Attributions →
               </button>
             </div>
           </div>
@@ -637,7 +733,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, isDark = t
         {/* Bottom Micro Line */}
         <div className="max-w-7xl mx-auto w-full pt-8 border-t border-dashed flex flex-col sm:flex-row items-center justify-between gap-4 text-[10px] font-mono uppercase" style={{ borderColor, color: dimText }}>
           <div>© {new Date().getFullYear()} CHOMSKYSHRINK. ALL RIGHTS RESERVED.</div>
-          <div>BUILT FOR RESEARCH & COMPUTER SCIENCE CURRICULA</div>
+          <div>BUILT BY TANISH WALTURE, BIRRTHI B & RAGHUNANTHAN R</div>
         </div>
 
       </footer>
@@ -646,12 +742,16 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, isDark = t
           APPLE-STYLE UTILITY DOCK (Contacts, Emails, Docs, Credits)
           ------------------------------------------------------------- */}
       <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 max-w-full">
-        <Dock className="items-end pb-3">
+        <Dock>
           {footerDockData.map((item, idx) => (
             <DockItem
               key={idx}
               onClick={item.action}
-              className="aspect-square rounded-full bg-[#382416] border border-[#40372e] hover:border-[#ffedd7]"
+              className="aspect-square rounded-full border shadow-md"
+              style={{
+                backgroundColor: isDark ? "#382416" : "#FFFFFF",
+                borderColor: isDark ? "#40372e" : "#DCD6F7",
+              }}
             >
               <DockLabel>{item.title}</DockLabel>
               <DockIcon>{item.icon}</DockIcon>
@@ -661,39 +761,140 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, isDark = t
       </div>
 
       {/* -------------------------------------------------------------
-          ACADEMIC CREDITS MODAL
+          CREDITS & ATTRIBUTIONS MODAL
           ------------------------------------------------------------- */}
       {showCreditsModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#100904]/85 backdrop-blur-sm p-4">
-          <div className="w-full max-w-lg rounded-[12px] border border-[#40372e] bg-[#1a1007] p-6 text-[#ffedd7] flex flex-col gap-5 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-dashed border-[#40372e] pb-3">
-              <span className="text-sm font-medium uppercase tracking-wider text-[#ffedd7]">
-                ACADEMIC & THEORETICAL CREDITS
-              </span>
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-sm overflow-y-auto"
+          style={{ backgroundColor: isDark ? "rgba(16, 9, 4, 0.85)" : "rgba(66, 72, 116, 0.4)" }}
+        >
+          <div 
+            className="w-full max-w-xl max-h-[90vh] overflow-y-auto rounded-[12px] border p-6 sm:p-8 flex flex-col gap-6 shadow-2xl"
+            style={{
+              backgroundColor: surfaceBg,
+              borderColor,
+              color: textColor,
+            }}
+          >
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-dashed pb-3" style={{ borderColor }}>
+              <div className="flex items-center gap-2.5">
+                <div 
+                  className="flex h-8 w-8 items-center justify-center rounded-[6px] border"
+                  style={{ backgroundColor: elevatedBg, borderColor }}
+                >
+                  <Users className="h-4 w-4" style={{ color: textColor }} />
+                </div>
+                <span className="text-sm font-medium uppercase tracking-wider" style={{ color: textColor }}>
+                  CREDITS & ATTRIBUTIONS
+                </span>
+              </div>
               <button 
                 onClick={() => setShowCreditsModal(false)}
-                className="text-[#a69888] hover:text-[#ffedd7] cursor-pointer"
+                className="p-1 rounded hover:opacity-75 transition-opacity cursor-pointer"
+                style={{ color: mutedText }}
               >
                 <X className="h-4 w-4" />
               </button>
             </div>
 
-            <div className="flex flex-col gap-3 text-xs leading-relaxed text-[#a69888]">
-              <p>ChomskyShrink is built upon foundational theorems in theoretical computer science and formal language theory:</p>
-              
-              <ul className="list-disc pl-4 space-y-1.5 text-[#ffedd7]">
-                <li><strong className="text-[#ffedd7]">Noam Chomsky (1956)</strong> — Formal hierarchy of grammars and regular language classification.</li>
-                <li><strong className="text-[#ffedd7]">Michael O. Rabin & Dana Scott (1959)</strong> — Non-deterministic finite automata and subset construction equivalence theorem.</li>
-                <li><strong className="text-[#ffedd7]">John E. Hopcroft (1971)</strong> — $O(k \cdot n \log n)$ partition refinement algorithm for minimal DFA equivalence.</li>
-                <li><strong className="text-[#ffedd7]">Anil Nerode & John Myhill (1958)</strong> — Myhill-Nerode theorem on distinguishable prefix equivalence classes.</li>
-                <li><strong className="text-[#ffedd7]">Ken Thompson (1968)</strong> — Inductive syntax-directed compilation of regular expressions to ε-NFAs.</li>
+            {/* Creators & Authors */}
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-[#dc5000]">
+                <Users className="h-3.5 w-3.5" />
+                <span>PROJECT CREATORS & DEVELOPERS</span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div 
+                  className="rounded-[8px] border p-3 flex flex-col gap-1"
+                  style={{ backgroundColor: innerBg, borderColor }}
+                >
+                  <span className="font-medium text-xs uppercase" style={{ color: textColor }}>Tanish Walture</span>
+                  <span className="text-[10px] font-mono" style={{ color: mutedText }}>Lead Architecture</span>
+                  <a 
+                    href="https://outlook.live.com/mail/0/deeplink/compose?to=tanishwalture@gmail.com&subject=ChomskyShrink%20Support%20%26%20Feedback" 
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[10px] font-mono text-[#dc5000] hover:underline truncate"
+                  >
+                    tanishwalture@gmail.com
+                  </a>
+                </div>
+
+                <div 
+                  className="rounded-[8px] border p-3 flex flex-col gap-1"
+                  style={{ backgroundColor: innerBg, borderColor }}
+                >
+                  <span className="font-medium text-xs uppercase" style={{ color: textColor }}>Birrthi B</span>
+                  <span className="text-[10px] font-mono" style={{ color: mutedText }}>Theoretical Research</span>
+                  <span className="text-[10px] font-mono opacity-60" style={{ color: dimText }}>Contributor</span>
+                </div>
+
+                <div 
+                  className="rounded-[8px] border p-3 flex flex-col gap-1"
+                  style={{ backgroundColor: innerBg, borderColor }}
+                >
+                  <span className="font-medium text-xs uppercase" style={{ color: textColor }}>Raghunanthan R</span>
+                  <span className="text-[10px] font-mono" style={{ color: mutedText }}>Verification & Testing</span>
+                  <span className="text-[10px] font-mono opacity-60" style={{ color: dimText }}>Contributor</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Educational YouTube Channels & Video Lecture Embeds */}
+            <div className="flex flex-col gap-3 border-t border-dashed pt-4" style={{ borderColor }}>
+              <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-[#dc5000]">
+                <Video className="h-3.5 w-3.5" />
+                <span>VIDEO LECTURE ATTRIBUTIONS & YOUTUBE CHANNELS</span>
+              </div>
+              <p className="text-xs leading-relaxed" style={{ color: mutedText }}>
+                Interactive video walkthroughs embedded across the curriculum tracks are curated from these exceptional educators:
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 font-mono text-xs">
+                <div className="rounded-[6px] border p-2.5 flex flex-col gap-0.5" style={{ backgroundColor: innerBg, borderColor }}>
+                  <span className="font-bold text-[#dc5000]">Neso Academy</span>
+                  <span className="text-[10px]" style={{ color: mutedText }}>Theory of Computation & Automata Series</span>
+                </div>
+                <div className="rounded-[6px] border p-2.5 flex flex-col gap-0.5" style={{ backgroundColor: innerBg, borderColor }}>
+                  <span className="font-bold text-[#dc5000]">Gate Smashers</span>
+                  <span className="text-[10px]" style={{ color: mutedText }}>Automata & Formal Languages Tutorials</span>
+                </div>
+                <div className="rounded-[6px] border p-2.5 flex flex-col gap-0.5" style={{ backgroundColor: innerBg, borderColor }}>
+                  <span className="font-bold text-[#dc5000]">Knowledge Gate</span>
+                  <span className="text-[10px]" style={{ color: mutedText }}>Finite State Automata & Sanchit Jain</span>
+                </div>
+                <div className="rounded-[6px] border p-2.5 flex flex-col gap-0.5" style={{ backgroundColor: innerBg, borderColor }}>
+                  <span className="font-bold text-[#dc5000]">Easy Theory</span>
+                  <span className="text-[10px]" style={{ color: mutedText }}>Computability & Pumping Lemma Proofs</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Foundational Theoretical Credits */}
+            <div className="flex flex-col gap-3 border-t border-dashed pt-4" style={{ borderColor }}>
+              <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider" style={{ color: textColor }}>
+                <BookOpen className="h-3.5 w-3.5 text-[#dc5000]" />
+                <span>FOUNDATIONAL MATHEMATICAL THEOREMS</span>
+              </div>
+              <ul className="list-disc pl-4 space-y-1.5 text-xs leading-relaxed" style={{ color: mutedText }}>
+                <li><strong style={{ color: textColor }}>Noam Chomsky (1956)</strong> — Formal hierarchy of grammars and regular language classification.</li>
+                <li><strong style={{ color: textColor }}>Michael O. Rabin & Dana Scott (1959)</strong> — Non-deterministic finite automata and subset construction equivalence theorem.</li>
+                <li><strong style={{ color: textColor }}>John E. Hopcroft (1971)</strong> — Minimal DFA partition refinement equivalence algorithm.</li>
+                <li><strong style={{ color: textColor }}>Anil Nerode & John Myhill (1958)</strong> — Myhill-Nerode theorem on distinguishable prefix equivalence classes.</li>
+                <li><strong style={{ color: textColor }}>Ken Thompson (1968)</strong> — Inductive syntax-directed compilation of regular expressions to ε-NFAs.</li>
               </ul>
             </div>
 
-            <div className="flex justify-end pt-2 border-t border-dashed border-[#40372e]">
+            {/* Close Button */}
+            <div className="flex justify-end pt-2 border-t border-dashed" style={{ borderColor }}>
               <button
                 onClick={() => setShowCreditsModal(false)}
-                className="rounded-[36px] bg-[#382416] px-6 py-2 text-xs font-medium uppercase text-[#ffedd7] hover:bg-[#40372e] cursor-pointer"
+                className="rounded-[36px] px-6 py-2 text-xs font-medium uppercase transition-all cursor-pointer border"
+                style={{
+                  backgroundColor: isDark ? "#382416" : "#424874",
+                  borderColor: isDark ? "#40372e" : "#424874",
+                  color: isDark ? "#ffedd7" : "#F4EEFF",
+                }}
               >
                 CLOSE CREDITS
               </button>

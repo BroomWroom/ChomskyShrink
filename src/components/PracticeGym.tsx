@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import {
   Trophy,
   HelpCircle,
-  Sparkles,
   CheckCircle2,
   ChevronDown,
   ChevronUp,

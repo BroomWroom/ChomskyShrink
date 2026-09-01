@@ -97,14 +97,32 @@ export class Automaton implements AutomatonData {
       dfa.acceptStates.push(startDfaName);
     }
 
+    const startRecord: { dfaName: string; set: string[]; moves: Record<string, string> } = {
+      dfaName: startDfaName,
+      set: initialSet,
+      moves: {},
+    };
+    subsetList.push(startRecord);
+
+    const getSnapshotSubsetTable = () => {
+      return subsetList.map(item => ({
+        stateName: item.dfaName,
+        originalSet: item.set,
+        transitions: { ...item.moves },
+      }));
+    };
+
     // Step 0: Initial Epsilon-Closure of Start State
     steps.push({
       stepIndex: 0,
-      title: "Compute Initial State Closure",
-      description: `Compute ε-closure for start state ${this.startState}: { ${initialSet.join(", ")} }`,
-      explanation: `Subset construction begins at the ε-closure of the NFA start state. State ${startDfaName} represents the subset { ${initialSet.join(", ")} }.`,
+      title: "Compute Initial ε-Closure",
+      description: `q0 = ε-closure(${this.startState}) = { ${initialSet.join(", ")} }`,
+      explanation: `Rabin-Scott subset construction begins at the ε-closure of the NFA start state. State q0 represents the subset { ${initialSet.join(", ")} }.${
+        dfa.acceptStates.includes(startDfaName) ? " Since it contains an NFA accept state, q0 is marked as an accept state." : ""
+      }`,
       activeStates: [startDfaName],
       activeTransitions: [],
+      currentSubsetTable: getSnapshotSubsetTable(),
       intermediateAutomaton: dfa.clone(),
     });
 
@@ -114,7 +132,11 @@ export class Automaton implements AutomatonData {
       const currentSet = subsetQueue.shift()!;
       const currentKey = currentSet.join(",");
       const currentDfaName = subsetMap.get(currentKey)!;
-      const moveRecords: Record<string, string> = {};
+      let record = subsetList.find(r => r.dfaName === currentDfaName);
+      if (!record) {
+        record = { dfaName: currentDfaName, set: currentSet, moves: {} };
+        subsetList.push(record);
+      }
 
       for (const sym of dfa.alphabet) {
         const directTargets = new Set<string>();
@@ -127,7 +149,17 @@ export class Automaton implements AutomatonData {
 
         const nextSet = this.getEpsilonClosure(Array.from(directTargets));
         if (nextSet.length === 0) {
-          moveRecords[sym] = "∅";
+          record.moves[sym] = "∅";
+          steps.push({
+            stepIndex: steps.length,
+            title: `Dead Transition on '${sym}' from ${currentDfaName}`,
+            description: `δ(${currentDfaName}, '${sym}') = ε-closure(move({ ${currentSet.join(", ") } }, '${sym}')) = ∅`,
+            explanation: `No states in subset { ${currentSet.join(", ")} } have outgoing transitions on symbol '${sym}'. This branch dead-ends.`,
+            activeStates: [currentDfaName],
+            activeTransitions: [],
+            currentSubsetTable: getSnapshotSubsetTable(),
+            intermediateAutomaton: dfa.clone(),
+          });
           continue;
         }
 
@@ -145,9 +177,10 @@ export class Automaton implements AutomatonData {
             dfa.acceptStates.push(nextDfaName);
           }
           subsetQueue.push(nextSet);
+          subsetList.push({ dfaName: nextDfaName, set: nextSet, moves: {} });
         }
 
-        moveRecords[sym] = nextDfaName!;
+        record.moves[sym] = nextDfaName!;
         
         // Prevent duplicate transition in DFA
         if (!dfa.transitions.some(t => t.from === currentDfaName && t.symbol === sym && t.to === nextDfaName)) {
@@ -159,16 +192,29 @@ export class Automaton implements AutomatonData {
           title: `Transition on '${sym}' from ${currentDfaName}`,
           description: `move(${currentDfaName}, '${sym}') = ε-closure({ ${Array.from(directTargets).join(", ")} }) = { ${nextSet.join(", ")} } → ${nextDfaName}`,
           explanation: isNewState
-            ? `Discovered new deterministic power-state ${nextDfaName} representing NFA subset { ${nextSet.join(", ")} }.`
+            ? `Discovered new deterministic power-state ${nextDfaName} representing NFA subset { ${nextSet.join(", ")} }.${
+                dfa.acceptStates.includes(nextDfaName!) ? " Marked as accept state because it contains an NFA accept state." : ""
+              }`
             : `Mapped transition from ${currentDfaName} on '${sym}' to existing power-state ${nextDfaName}.`,
           activeStates: [currentDfaName, nextDfaName!],
           activeTransitions: [{ from: currentDfaName, symbol: sym, to: nextDfaName! }],
+          currentSubsetTable: getSnapshotSubsetTable(),
           intermediateAutomaton: dfa.clone(),
         });
       }
-
-      subsetList.push({ dfaName: currentDfaName, set: currentSet, moves: moveRecords });
     }
+
+    // Final Completion Step
+    steps.push({
+      stepIndex: steps.length,
+      title: "Subset Construction Finalized",
+      description: `Resulting DFA has ${dfa.states.length} states and ${dfa.transitions.length} transitions.`,
+      explanation: `All reachable power-state subsets have been explored. By the Rabin-Scott Theorem, this DFA accepts precisely the same language as the original NFA.`,
+      activeStates: [...dfa.states],
+      activeTransitions: [...dfa.transitions],
+      currentSubsetTable: getSnapshotSubsetTable(),
+      intermediateAutomaton: dfa.clone(),
+    });
 
     const theory: TheoreticalBreakdown = {
       formalDefinition: {
@@ -219,6 +265,7 @@ export class Automaton implements AutomatonData {
     }
 
     const validStates = this.states.filter(s => reachable.has(s));
+    const unreachableStates = this.states.filter(s => !reachable.has(s));
     const validAccept = this.acceptStates.filter(s => reachable.has(s));
     const nonAccept = validStates.filter(s => !validAccept.includes(s));
 
@@ -227,23 +274,59 @@ export class Automaton implements AutomatonData {
       return { minDFA: emptyDFA, steps, theory: this.buildTheory(emptyDFA) };
     }
 
-    // Step 2: Initial Partition P0 = { F, Q \ F }
+    const alphabet = this.alphabet.filter(s => s !== "ε" && s !== "e" && s !== "" && s !== undefined);
+
+    // Build the initial reachable automaton for Step 0
+    const reachableAuto = new Automaton({
+      states: [...validStates],
+      alphabet: [...alphabet],
+      transitions: this.transitions.filter(t => validStates.includes(t.from) && validStates.includes(t.to) && alphabet.includes(t.symbol)),
+      startState: this.startState && validStates.includes(this.startState) ? this.startState : validStates[0],
+      acceptStates: [...validAccept],
+    });
+
+    // Step 0: Reachable States Frame
+    steps.push({
+      stepIndex: 0,
+      title: "Prune Unreachable States",
+      description: `Reachable: { ${validStates.join(", ")} }${unreachableStates.length > 0 ? ` | Pruned: { ${unreachableStates.join(", ")} }` : " | All states reachable"}`,
+      explanation: unreachableStates.length > 0
+        ? `States { ${unreachableStates.join(", ")} } cannot be reached from start state '${this.startState}'. They are safely removed without altering the language.`
+        : `All ${validStates.length} states are reachable from start state '${this.startState}'.`,
+      activeStates: unreachableStates.length > 0 ? unreachableStates : validStates,
+      activeTransitions: [],
+      currentPartitions: [validStates],
+      intermediateAutomaton: reachableAuto.clone(),
+    });
+
+    // Step 2: Initial Partition P0 = { F, Q \ F } (0-Equivalence)
     let partitions: string[][] = [];
-    if (validAccept.length > 0) partitions.push([...validAccept]);
     if (nonAccept.length > 0) partitions.push([...nonAccept]);
+    if (validAccept.length > 0) partitions.push([...validAccept]);
 
     const minimizationLogs: { iteration: number; description: string; partitions: string[][]; splitReason?: string }[] = [];
 
     minimizationLogs.push({
       iteration: 0,
-      description: "Initial Partition: Accept vs Non-Accept states",
+      description: "0-Equivalence: Non-Accept vs Accept states",
       partitions: partitions.map(p => [...p]),
-      splitReason: `Partitioned into Accept states { ${validAccept.join(", ")} } and Non-Accept states { ${nonAccept.join(", ")} }.`,
+      splitReason: `Partitioned into Non-Accept { ${nonAccept.join(", ")} } and Accept { ${validAccept.join(", ")} }. Accept states are distinguishable from non-accept states on the empty string ε.`,
     });
 
-    const alphabet = this.alphabet.filter(s => s !== "ε" && s !== "e" && s !== "" && s !== undefined);
+    // Intermediate quotient for P0
+    const p0Quotient = this.buildPartitionQuotient(partitions, alphabet, reachable, validAccept);
+    steps.push({
+      stepIndex: 1,
+      title: "Initial Partition P0 (0-Equivalence)",
+      description: `P0 = { ${partitions.map(p => `{ ${p.join(", ")} }`).join(", ")} }`,
+      explanation: `States are divided into 2 fundamental groups: Non-Accept states and Accept states. By definition, an accept state cannot be equivalent to a non-accept state.`,
+      activeStates: p0Quotient.states,
+      activeTransitions: p0Quotient.transitions,
+      currentPartitions: partitions.map(p => [...p]),
+      intermediateAutomaton: p0Quotient.clone(),
+    });
 
-    // Step 3: Iterative Partition Refinement until Equilibrium Fixed Point
+    // Step 3: Iterative Partition Refinement until Fixed Point Equilibrium
     let changed = true;
     let iterationCount = 1;
 
@@ -261,7 +344,6 @@ export class Automaton implements AutomatonData {
         const subGroupMap = new Map<string, string[]>();
 
         for (const state of group) {
-          // Signature encodes which partition group index each transition lands in
           const sigParts: string[] = [];
           for (const sym of alphabet) {
             const trans = this.transitions.find(t => t.from === state && t.symbol === sym);
@@ -283,22 +365,37 @@ export class Automaton implements AutomatonData {
           changed = true;
           subGroups.forEach(sg => nextPartitions.push(sg));
 
+          const splitDetail = subGroups.map(sg => `{ ${sg.join(", ")} }`).join(" and ");
           minimizationLogs.push({
             iteration: iterationCount,
-            description: `Refined partition { ${group.join(", ")} } into ${subGroups.length} distinct equivalence classes`,
+            description: `Refined group { ${group.join(", ")} } → ${splitDetail}`,
             partitions: [...nextPartitions, ...partitions.slice(partitions.indexOf(group) + 1)].map(p => [...p]),
-            splitReason: `States in { ${group.join(", ")} } had differing target partition signatures on alphabet Σ.`,
+            splitReason: `States in { ${group.join(", ")} } had differing target transitions across alphabet Σ.`,
           });
         } else {
           nextPartitions.push(group);
         }
       }
 
-      partitions = nextPartitions;
+      if (changed) {
+        partitions = nextPartitions;
+        const currentQuotient = this.buildPartitionQuotient(partitions, alphabet, reachable, validAccept);
+        steps.push({
+          stepIndex: steps.length,
+          title: `Partition Refinement P${iterationCount}`,
+          description: `P${iterationCount} = { ${partitions.map(p => `{ ${p.join(", ")} }`).join(", ")} }`,
+          explanation: `Tested state transitions against the previous partition classes. Groups with distinguishable behaviors were partitioned into separate equivalence blocks.`,
+          activeStates: currentQuotient.states,
+          activeTransitions: currentQuotient.transitions,
+          currentPartitions: partitions.map(p => [...p]),
+          intermediateAutomaton: currentQuotient.clone(),
+        });
+      }
+
       iterationCount++;
     }
 
-    // Step 4: Build Minimal DFA from Consolidated Partitions
+    // Step 4: Build Canonical Minimal DFA from Consolidated Partitions
     const minDFA = new Automaton();
     minDFA.alphabet = [...alphabet];
     minDFA.transitions = [];
@@ -356,27 +453,16 @@ export class Automaton implements AutomatonData {
       }
     }
 
-    // Generate Steps for Walkthrough Player
+    // Final Fixed Point Completion Frame
     steps.push({
-      stepIndex: 0,
-      title: "Eliminate Unreachable States",
-      description: `Identified reachable state set: { ${validStates.join(", ")} }`,
-      explanation: `Pruned ${this.states.length - validStates.length} unreachable state(s) from initial automaton.`,
-      activeStates: validStates,
-      activeTransitions: [],
+      stepIndex: steps.length,
+      title: "Minimization Fixed Point Equilibrium",
+      description: `Canonical Minimal DFA: ${minDFA.states.length} states (${validStates.length - minDFA.states.length} redundant states merged)`,
+      explanation: `No further partitions can be distinguished. By the Myhill-Nerode Theorem, this represents the unique minimal state DFA for this language.`,
+      activeStates: minDFA.states,
+      activeTransitions: minDFA.transitions,
+      currentPartitions: partitions.map(p => [...p]),
       intermediateAutomaton: minDFA.clone(),
-    });
-
-    minimizationLogs.forEach((log, idx) => {
-      steps.push({
-        stepIndex: idx + 1,
-        title: `Partition Iteration ${log.iteration}`,
-        description: log.description,
-        explanation: log.splitReason || "Partition refinement step.",
-        activeStates: minDFA.states,
-        activeTransitions: minDFA.transitions,
-        intermediateAutomaton: minDFA.clone(),
-      });
     });
 
     const theory: TheoreticalBreakdown = {
@@ -396,6 +482,65 @@ export class Automaton implements AutomatonData {
     };
 
     return { minDFA, steps, theory };
+  }
+
+  /**
+   * Helper to build a quotient automaton for partition refinement steps
+   */
+  private buildPartitionQuotient(
+    partitions: string[][],
+    alphabet: string[],
+    reachable: Set<string>,
+    validAccept: string[]
+  ): Automaton {
+    const auto = new Automaton();
+    auto.alphabet = [...alphabet];
+    auto.transitions = [];
+    auto.states = [];
+    auto.acceptStates = [];
+    auto.stateMappings = {};
+
+    const stateToGroupName = new Map<string, string>();
+
+    partitions.forEach((group, idx) => {
+      const gName = group.length === 1 ? group[0] : `P${idx}`;
+      auto.states.push(gName);
+      auto.stateMappings[gName] = `{ ${group.join(", ")} }`;
+      group.forEach(s => stateToGroupName.set(s, gName));
+
+      if (group.some(s => validAccept.includes(s))) {
+        auto.acceptStates.push(gName);
+      }
+      if (this.startState && group.includes(this.startState)) {
+        auto.startState = gName;
+      }
+    });
+
+    if (!auto.startState && auto.states.length > 0) {
+      auto.startState = auto.states[0];
+    }
+
+    const added = new Set<string>();
+    for (const group of partitions) {
+      const rep = group[0];
+      const sourceG = stateToGroupName.get(rep)!;
+
+      for (const sym of alphabet) {
+        const trans = this.transitions.find(t => t.from === rep && t.symbol === sym && reachable.has(t.to));
+        if (trans) {
+          const targetG = stateToGroupName.get(trans.to);
+          if (targetG) {
+            const key = `${sourceG}__${sym}__${targetG}`;
+            if (!added.has(key)) {
+              added.add(key);
+              auto.transitions.push({ from: sourceG, symbol: sym, to: targetG });
+            }
+          }
+        }
+      }
+    }
+
+    return auto;
   }
 
   /* ==========================================================================

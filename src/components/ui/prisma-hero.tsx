@@ -1,5 +1,5 @@
 import { motion, useInView } from "framer-motion";
-import { ArrowRight, Sparkles } from "lucide-react";
+import { ArrowRight, Zap } from "lucide-react";
 import { useRef } from "react";
 
 /* ---------------- WordsPullUp ---------------- */
@@ -115,7 +115,7 @@ export const PrismaHero = ({ onNavigate }: PrismaHeroProps) => {
 
         {/* Floating badge */}
         <div className="absolute top-6 left-6 z-20 flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#424874]/80 backdrop-blur-md border border-[#A6B1E1]/30 text-[#F4EEFF] text-xs font-mono">
-          <Sparkles className="w-3.5 h-3.5 text-[#A6B1E1]" />
+          <Zap className="w-3.5 h-3.5 text-[#A6B1E1]" />
           <span>Finite Automata Engine v2.5</span>
         </div>
 

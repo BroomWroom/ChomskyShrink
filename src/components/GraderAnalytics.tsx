@@ -1,5 +1,5 @@
 import React from "react";
-import { CheckCircle2, XCircle, Trophy, Sparkles, Activity, ArrowRight, Lightbulb } from "lucide-react";
+import { CheckCircle2, XCircle, Trophy, Activity, ArrowRight, Lightbulb } from "lucide-react";
 import { PracticeChallenge, TestCase } from "../types/automaton";
 import { Automaton } from "../core/automaton";
 
@@ -41,8 +41,19 @@ export const GraderAnalytics: React.FC<GraderAnalyticsProps> = ({
   const optimalStateCount = challenge.optimalStateCount;
   const isOptimalStates = userStateCount <= optimalStateCount;
 
+  const surfaceBg = isDark ? "#1a1007" : "#FFFFFF";
+  const innerBg = isDark ? "#100904" : "#F8F6FF";
+  const elevatedBg = isDark ? "#382416" : "#DCD6F7";
+  const borderColor = isDark ? "#40372e" : "#DCD6F7";
+  const textColor = isDark ? "#ffedd7" : "#424874";
+  const mutedText = isDark ? "#a69888" : "#5f6594";
+  const dimText = isDark ? "#6c5f51" : "#8b92be";
+
   return (
-    <div className="flex flex-col gap-6 rounded-[12px] border border-[#40372e] bg-[#1a1007] p-6 text-[#ffedd7]">
+    <div 
+      className="flex flex-col gap-6 rounded-[12px] border p-6 transition-colors duration-200"
+      style={{ backgroundColor: surfaceBg, borderColor, color: textColor }}
+    >
       
       {/* Score Banner */}
       <div className={`rounded-[12px] p-6 flex flex-col sm:flex-row items-center justify-between gap-4 border ${
@@ -76,26 +87,35 @@ export const GraderAnalytics: React.FC<GraderAnalyticsProps> = ({
 
       {/* Metrics Row: Efficiency & State Count */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="rounded-[8px] border border-[#40372e] bg-[#100904] p-4">
-          <div className="text-[10px] font-medium uppercase text-[#6c5f51]">SUBMITTED STATE COUNT</div>
-          <div className="text-xl font-mono font-bold text-[#ffedd7] mt-1">{userStateCount} STATES</div>
-          <div className="text-[11px] text-[#a69888] mt-0.5">Alphabet: &#123; {userAutomaton.alphabet.join(", ")} &#125;</div>
+        <div 
+          className="rounded-[8px] border p-4"
+          style={{ backgroundColor: innerBg, borderColor }}
+        >
+          <div className="text-[10px] font-medium uppercase" style={{ color: dimText }}>SUBMITTED STATE COUNT</div>
+          <div className="text-xl font-mono font-bold mt-1" style={{ color: textColor }}>{userStateCount} STATES</div>
+          <div className="text-[11px] mt-0.5" style={{ color: mutedText }}>Alphabet: &#123; {userAutomaton.alphabet.join(", ")} &#125;</div>
         </div>
 
-        <div className="rounded-[8px] border border-[#40372e] bg-[#100904] p-4">
-          <div className="text-[10px] font-medium uppercase text-[#6c5f51]">THEORETICAL OPTIMAL MINIMAL</div>
-          <div className="text-xl font-mono font-bold text-[#ffedd7] mt-1">{optimalStateCount} STATES</div>
-          <div className="text-[11px] text-[#a69888] mt-0.5">
+        <div 
+          className="rounded-[8px] border p-4"
+          style={{ backgroundColor: innerBg, borderColor }}
+        >
+          <div className="text-[10px] font-medium uppercase" style={{ color: dimText }}>THEORETICAL OPTIMAL MINIMAL</div>
+          <div className="text-xl font-mono font-bold mt-1" style={{ color: textColor }}>{optimalStateCount} STATES</div>
+          <div className="text-[11px] mt-0.5" style={{ color: mutedText }}>
             {isOptimalStates ? "State-Minimal Equivalence Class" : `${userStateCount - optimalStateCount} Redundant State(s)`}
           </div>
         </div>
 
-        <div className="rounded-[8px] border border-[#40372e] bg-[#100904] p-4">
-          <div className="text-[10px] font-medium uppercase text-[#6c5f51]">DETERMINISM VERIFICATION</div>
-          <div className="text-xl font-medium uppercase text-[#ffedd7] mt-1">
+        <div 
+          className="rounded-[8px] border p-4"
+          style={{ backgroundColor: innerBg, borderColor }}
+        >
+          <div className="text-[10px] font-medium uppercase" style={{ color: dimText }}>DETERMINISM VERIFICATION</div>
+          <div className="text-xl font-mono font-bold mt-1" style={{ color: textColor }}>
             {userAutomaton.isNFA() ? "NFA DETECTED" : "DFA COMPLIANT"}
           </div>
-          <div className="text-[11px] text-[#a69888] mt-0.5">
+          <div className="text-[11px] mt-0.5" style={{ color: mutedText }}>
             {userAutomaton.isNFA() ? "Contains parallel branching paths" : "Strict deterministic transitions"}
           </div>
         </div>
@@ -103,20 +123,20 @@ export const GraderAnalytics: React.FC<GraderAnalyticsProps> = ({
 
       {/* Test Case Execution Log */}
       <div className="flex flex-col gap-3">
-        <div className="flex items-center justify-between border-b border-dashed border-[#40372e] pb-2">
-          <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-[#ffedd7]">
+        <div className="flex items-center justify-between border-b border-dashed pb-2" style={{ borderColor }}>
+          <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider" style={{ color: textColor }}>
             <Activity className="h-4 w-4 text-[#dc5000]" />
             <span>TEST SUITE EXECUTION TRACE</span>
           </div>
-          <div className="text-xs font-mono text-[#6c5f51]">
+          <div className="text-xs font-mono" style={{ color: dimText }}>
             {passedCount}/{totalCount} PASSED
           </div>
         </div>
 
-        <div className="overflow-x-auto rounded-[8px] border border-[#40372e]">
+        <div className="overflow-x-auto rounded-[8px] border" style={{ borderColor }}>
           <table className="w-full text-left font-mono text-xs border-collapse">
             <thead>
-              <tr className="border-b border-[#40372e] bg-[#100904] text-[#a69888]">
+              <tr className="border-b" style={{ backgroundColor: innerBg, borderColor, color: mutedText }}>
                 <th className="p-3">Status</th>
                 <th className="p-3">Input String (w)</th>
                 <th className="p-3">Expected</th>
@@ -128,41 +148,48 @@ export const GraderAnalytics: React.FC<GraderAnalyticsProps> = ({
               {results.map((res, idx) => (
                 <tr
                   key={idx}
-                  className={`border-b border-[#40372e]/60 ${
-                    res.passed ? "bg-emerald-950/20" : "bg-rose-950/30"
+                  className={`border-b ${
+                    res.passed 
+                      ? (isDark ? "bg-emerald-950/20" : "bg-emerald-50/60") 
+                      : (isDark ? "bg-rose-950/30" : "bg-rose-50/60")
                   }`}
+                  style={{ borderColor }}
                 >
                   <td className="p-3">
                     {res.passed ? (
-                      <span className="flex items-center gap-1 font-bold text-emerald-400">
+                      <span className="flex items-center gap-1 font-bold text-emerald-500">
                         <CheckCircle2 className="h-4 w-4" />
                         PASS
                       </span>
                     ) : (
-                      <span className="flex items-center gap-1 font-bold text-rose-400">
+                      <span className="flex items-center gap-1 font-bold text-rose-500">
                         <XCircle className="h-4 w-4" />
                         FAIL
                       </span>
                     )}
                   </td>
-                  <td className="p-3 font-bold text-[#ffedd7]">
+                  <td className="p-3 font-bold" style={{ color: textColor }}>
                     {res.testCase.input === "" ? "ε (empty string)" : `"${res.testCase.input}"`}
                   </td>
                   <td className="p-3">
                     <span className={`px-2 py-0.5 rounded-[4px] text-[10px] font-bold ${
-                      res.testCase.expected ? "bg-emerald-900 text-emerald-200" : "bg-[#382416] text-[#a69888]"
+                      res.testCase.expected 
+                        ? (isDark ? "bg-emerald-900 text-emerald-200" : "bg-emerald-100 text-emerald-800") 
+                        : (isDark ? "bg-[#382416] text-[#a69888]" : "bg-[#DCD6F7] text-[#424874]")
                     }`}>
                       {res.testCase.expected ? "ACCEPT" : "REJECT"}
                     </span>
                   </td>
                   <td className="p-3">
                     <span className={`px-2 py-0.5 rounded-[4px] text-[10px] font-bold ${
-                      res.userAccepted ? "bg-emerald-900 text-emerald-200" : "bg-[#382416] text-[#a69888]"
+                      res.userAccepted 
+                        ? (isDark ? "bg-emerald-900 text-emerald-200" : "bg-emerald-100 text-emerald-800") 
+                        : (isDark ? "bg-[#382416] text-[#a69888]" : "bg-[#DCD6F7] text-[#424874]")
                     }`}>
                       {res.userAccepted ? "ACCEPT" : "REJECT"}
                     </span>
                   </td>
-                  <td className="p-3 font-sans text-xs text-[#a69888]">
+                  <td className="p-3 font-sans text-xs" style={{ color: mutedText }}>
                     {res.testCase.explanation}
                   </td>
                 </tr>
@@ -173,12 +200,15 @@ export const GraderAnalytics: React.FC<GraderAnalyticsProps> = ({
       </div>
 
       {/* Recommendations & Tips */}
-      <div className="rounded-[8px] border border-[#40372e] bg-[#100904] p-4 flex flex-col gap-2">
-        <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-[#ffedd7]">
+      <div 
+        className="rounded-[8px] border p-4 flex flex-col gap-2"
+        style={{ backgroundColor: innerBg, borderColor }}
+      >
+        <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider" style={{ color: textColor }}>
           <Lightbulb className="h-4 w-4 text-[#dc5000]" />
           <span>DIAGNOSTIC SUGGESTIONS & PROOFS</span>
         </div>
-        <ul className="flex flex-col gap-1.5 text-xs text-[#a69888] list-disc pl-4">
+        <ul className="flex flex-col gap-1.5 text-xs list-disc pl-4" style={{ color: mutedText }}>
           {!isPerfect && (
             <li>
               Review the failed test vectors above. Ensure your state machine handles transition sink states and edge cases like the empty string ε properly.
@@ -198,11 +228,12 @@ export const GraderAnalytics: React.FC<GraderAnalyticsProps> = ({
       </div>
 
       {/* Action Buttons */}
-      <div className="flex items-center justify-between border-t border-dashed border-[#40372e] pt-4">
+      <div className="flex items-center justify-between border-t border-dashed pt-4" style={{ borderColor }}>
         {onRetry && (
           <button
             onClick={onRetry}
-            className="rounded-[22.5px] border border-[#40372e] px-5 py-2 text-xs font-medium uppercase text-[#a69888] hover:text-[#ffedd7] transition-all cursor-pointer"
+            className="rounded-[22.5px] border px-5 py-2 text-xs font-medium uppercase transition-all cursor-pointer hover:opacity-80"
+            style={{ borderColor, color: mutedText }}
           >
             EDIT IN STUDIO
           </button>
@@ -211,7 +242,12 @@ export const GraderAnalytics: React.FC<GraderAnalyticsProps> = ({
         {onNextChallenge && (
           <button
             onClick={onNextChallenge}
-            className="flex items-center gap-2 rounded-[36px] bg-[#382416] px-6 py-2.5 text-xs sm:text-sm font-medium uppercase text-[#ffedd7] border border-[#40372e] hover:bg-[#40372e] transition-all cursor-pointer"
+            className="flex items-center gap-2 rounded-[36px] px-6 py-2.5 text-xs sm:text-sm font-medium uppercase border transition-all cursor-pointer hover:opacity-90"
+            style={{
+              backgroundColor: isDark ? "#382416" : "#424874",
+              borderColor: isDark ? "#40372e" : "#424874",
+              color: isDark ? "#ffedd7" : "#F4EEFF",
+            }}
           >
             <span>NEXT CHALLENGE</span>
             <ArrowRight className="h-4 w-4" />

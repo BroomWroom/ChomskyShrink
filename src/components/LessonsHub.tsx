@@ -13,8 +13,7 @@ import {
   Search,
   Check,
   ChevronRight,
-  GraduationCap,
-  Sparkles
+  GraduationCap
 } from "lucide-react";
 import { LESSON_MODULES, LESSON_TRACKS, REFERENCE_MATERIALS } from "../data/lessons";
 
